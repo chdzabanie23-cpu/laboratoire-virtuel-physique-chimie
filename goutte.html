@@ -19,7 +19,7 @@ button.primary{background:var(--green);border-color:var(--green);color:white}but
 .scale{position:absolute;inset:32px auto 32px 0;left:calc(50% - 80px);width:45px;border-right:1px solid #77918f}
 .tick{position:absolute;right:0;transform:translateY(-50%);font-size:.72rem;line-height:1;color:#355955;display:flex;align-items:center;gap:5px}
 .tick:after{content:"";width:10px;border-top:1px solid currentColor}
-.tube{position:absolute;inset:26px auto 24px 50%;transform:translateX(-50%);width:65px;border:2px solid #739a9e;border-top:4px double #739a9e;border-radius:7px 7px 18px 18px;background:linear-gradient(90deg,#ffffff80,#ffffff22 25%,transparent 77%,#91b6ba42),linear-gradient(#ffffff70 0 3%,#efc984 3% 100%);box-shadow:inset 5px 0 8px #fff9,0 8px 13px #25484622}
+.tube{position:absolute;inset:26px auto 24px 50%;transform:translateX(-50%);width:65px;border:2px solid #739a9e;border-top:4px double #739a9e;border-radius:7px 7px 18px 18px;background:linear-gradient(90deg,#ffffff80,#ffffff22 25%,transparent 77%,#91b6ba42);box-shadow:inset 5px 0 8px #fff9,0 8px 13px #25484622}
 .tube:after{content:"";position:absolute;bottom:-4px;left:-14px;right:-14px;height:7px;border-radius:3px;background:#7b9c9b;z-index:-1}
 .axis{position:absolute;inset:32px 0}
 .drop{position:absolute;left:50%;width:14px;height:17px;transform:translate(-50%,-50%);border-radius:60% 60% 55% 55%;background:radial-gradient(circle at 35% 30%,#c49beb,#7429a4 58%,#441662);box-shadow:0 0 0 1px #502166;z-index:2}
@@ -33,6 +33,17 @@ table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
 th,td{text-align:left;padding:8px 4px;border-bottom:1px solid var(--line);font-size:.88rem}
 details{margin-top:14px}summary{cursor:pointer;font-weight:700;color:var(--green)}
 @media(max-width:680px){.workspace{grid-template-columns:1fr}.scene{height:280px}}
+
+[hidden]{display:none!important}
+.tube span{position:absolute;z-index:1;left:5px;top:3px;font-size:.62rem;font-weight:750;color:#385f61}
+.oil{position:absolute;bottom:0;left:0;right:0;height:0;border-radius:0 0 15px 15px;background:linear-gradient(90deg,#f7dfae,#e8bb70);transition:height .45s ease}
+.scene.has-oil .oil{height:94%}
+.pasteur{position:absolute;top:2px;left:calc(50% + 40px);width:15px;height:70px;transform:rotate(41deg);z-index:2}
+.pasteur:before{content:"";position:absolute;width:17px;height:23px;border-radius:8px;background:#624484;border:1px solid #3d2856}
+.pasteur span{position:absolute;top:20px;left:5px;width:8px;height:47px;border:1px solid #715985;border-radius:2px 2px 5px 5px;background:linear-gradient(#ffffff 0 48%,#a96dca 48% 100%)}
+.prep{margin:12px 0;padding:12px;background:#eef6f3;border-radius:10px}
+.prep h3{font-size:1rem;margin:0}.prep p{margin:6px 0 10px}
+@media (prefers-reduced-motion:reduce){.oil{transition:none}}
 </style>
 </head>
 <body>
@@ -40,25 +51,31 @@ details{margin-top:14px}summary{cursor:pointer;font-weight:700;color:var(--green
 <header>
   <p class="level">Physique-chimie · Seconde bac pro</p>
   <h1>Une goutte dans l’huile</h1>
-  <p>Comment mesurer la vitesse moyenne d’une goutte d’eau colorée qui descend dans l’huile ?</p>
+  <p>Comment mesurer la vitesse moyenne d’une goutte de solution aqueuse de permanganate de potassium qui descend dans l’huile ?</p>
 </header>
 <div class="workspace">
   <section class="card" aria-labelledby="measure-heading">
-    <h2 id="measure-heading">1. Observer et chronométrer</h2>
-    <p>Prends l’éprouvette comme référentiel. Lis sur la règle la position des repères A et B.</p>
-    <div class="scene" role="img" aria-label="Éprouvette d’huile avec une goutte violette et une règle graduée vers le bas. Repères A à 4 centimètres et B à 16 centimètres.">
-      <div class="tube" aria-hidden="true"></div>
+    <h2 id="measure-heading">1. Préparer et chronométrer</h2>
+    <p>Prends l’éprouvette de 100 mL comme référentiel. La règle graduée en centimètres indique la position de la goutte.</p>
+    <div class="scene" id="scene" role="img" aria-label="Éprouvette graduée de 100 mL vide, à côté d’une règle.">
+      <div class="tube" aria-hidden="true"><span>100 mL</span><div class="oil"></div></div>
+      <div class="pasteur" aria-hidden="true" hidden id="pipette"><span></span></div>
       <div class="scale" aria-hidden="true" id="scale"></div>
       <div class="axis" aria-hidden="true">
-        <div class="mark" style="top:20%"><span>A</span></div>
-        <div class="mark" style="top:80%"><span>B</span></div>
-        <div class="drop" id="drop" style="top:2%"></div>
+        <div class="mark" id="mark-a" style="top:20%" hidden><span>A</span></div>
+        <div class="mark" id="mark-b" style="top:80%" hidden><span>B</span></div>
+        <div class="drop" id="drop" style="top:2%" hidden></div>
       </div>
+    </div>
+    <div class="prep">
+      <h3>Préparation</h3>
+      <p id="prep-description" role="status">Verse l’huile dans l’éprouvette de 100 mL en laissant un peu d’espace sous le bord.</p>
+      <button type="button" class="primary" id="prepare">Verser l’huile</button>
     </div>
     <p>Lance une goutte. Démarre le chronomètre quand son <strong>centre</strong> passe devant A. Arrête-le quand il passe devant B.</p>
     <output id="clock" class="measure" aria-label="Chronomètre">0,00 s</output>
     <div class="actions">
-      <button type="button" id="release" class="primary">Lâcher une goutte</button>
+      <button type="button" id="release" class="primary">Déposer la goutte avec la pipette</button>
       <button type="button" id="timer" disabled>Démarrer le chrono</button>
       <button type="button" id="retry" disabled>Refaire l’essai</button>
     </div>
@@ -102,6 +119,39 @@ const distance = get("distance"), speed = get("speed"), check = get("check");
 const markerA = 4, markerB = 16, depth = 20, distanceM = (markerB - markerA) / 100;
 const velocities = [3.2, 3.4, 3.1];
 const records = [];
+const prepare = get("prepare"), prepDescription = get("prep-description");
+const preparation = [
+  ["Verser l’huile", "Verse l’huile dans l’éprouvette de 100 mL en laissant un peu d’espace sous le bord."],
+  ["Placer le repère A", "Place le repère A près du haut de la colonne d’huile, au niveau de la graduation 4 cm de la règle."],
+  ["Placer le repère B", "Place le repère B plus bas, au niveau de la graduation 16 cm de la règle."],
+  ["Prélever la solution de KMnO₄", "Presse la poire de la pipette Pasteur, plonge la pointe dans la solution aqueuse diluée de permanganate de potassium (KMnO₄) déjà préparée, puis relâche la poire pour aspirer un peu de solution."]
+];
+let prepStep = 0;
+let pipetteLoaded = false;
+function drawPreparation() {
+  get("scene").classList.toggle("has-oil", prepStep > 0);
+  get("mark-a").hidden = prepStep < 2;
+  get("mark-b").hidden = prepStep < 3;
+  get("pipette").hidden = !pipetteLoaded;
+  prepare.hidden = pipetteLoaded || records.length >= velocities.length || attempt !== "ready";
+  const [label, instructions] = preparation[prepStep];
+  prepare.textContent = label;
+  prepDescription.textContent = records.length >= velocities.length
+    ? "Les trois essais sont terminés."
+    : pipetteLoaded
+      ? "La pipette est chargée. Dépose une seule goutte à la surface de l’huile, au centre de l’éprouvette."
+      : attempt === "ready"
+        ? instructions
+        : "L’éprouvette contient l’huile et les deux repères sont en place.";
+  const sceneState = prepStep === 0 ? "vide" : "contenant de l’huile";
+  const marks = prepStep < 2 ? "" : prepStep === 2 ? " Repère A à 4 cm." : " Repères A à 4 cm et B à 16 cm.";
+  get("scene").setAttribute("aria-label", "Éprouvette graduée de 100 mL " + sceneState + ", à côté d’une règle." + marks);
+}
+prepare.addEventListener("click", () => {
+  if (prepStep < preparation.length - 1) prepStep++;
+  else pipetteLoaded = true;
+  drawControls();
+});
 let launchedAt = null, startedAt = null, measured = null, startPosition = null, frame = 0, attempt = "ready";
 const format = (number, digits) => number.toFixed(digits).replace(".", ",");
 const read = field => {
@@ -125,7 +175,9 @@ function drawTime(seconds) {
   clock.textContent = format(seconds, 2) + " s";
 }
 function drawControls() {
-  release.disabled = attempt !== "ready" || records.length >= velocities.length;
+  release.disabled = attempt !== "ready" || !pipetteLoaded || records.length >= velocities.length;
+  get("drop").hidden = attempt === "ready";
+  drawPreparation();
   timer.disabled = attempt !== "falling";
   timer.textContent = startedAt === null ? "Démarrer le chrono" : "Arrêter le chrono";
   retry.disabled = attempt === "ready";
@@ -139,7 +191,7 @@ function resetAttempt() {
   drawTime(0);
   speed.value = "";
   feedback.textContent = records.length === velocities.length ? "Les trois essais sont enregistrés." : "Chronomètre le passage de la goutte entre A et B.";
-  message.textContent = records.length === velocities.length ? "Les trois essais sont terminés." : "Prêt pour l’essai " + (records.length + 1) + ".";
+  message.textContent = records.length === velocities.length ? "Les trois essais sont terminés." : prepStep < 3 ? "Prépare l’éprouvette et les repères." : "Prêt pour l’essai " + (records.length + 1) + ".";
   drawControls();
 }
 function update(now) {
@@ -157,6 +209,7 @@ function update(now) {
 release.addEventListener("click", () => {
   launchedAt = performance.now();
   attempt = "falling";
+  pipetteLoaded = false;
   message.textContent = "Observe le centre de la goutte. Démarre au repère A.";
   drawControls();
   frame = requestAnimationFrame(update);
@@ -216,6 +269,8 @@ function renderResults() {
 }
 get("reset").addEventListener("click", () => {
   records.length = 0;
+  prepStep = 0;
+  pipetteLoaded = false;
   distance.value = "";
   get("summary").open = false;
   renderResults();
