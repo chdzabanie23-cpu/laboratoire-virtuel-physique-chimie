@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Le bus et la rue | Laboratoire virtuel</title>
+<style>
+*{box-sizing:border-box}
+:root{font-family:system-ui,sans-serif;color:#193449;background:#eaf2ef;color-scheme:light}
+body{margin:0}
+main{max-width:1080px;margin:auto;padding:28px 20px 48px}
+header{margin-bottom:24px}
+header p{margin:8px 0}
+.level{color:#37665e;font-weight:700}
+h1{font-size:clamp(2.2rem,7vw,4.5rem);letter-spacing:-.06em;line-height:1;margin:12px 0}
+h2{font-size:1.25rem;margin:0 0 12px}
+.card{background:#fff;border:1px solid #ceded8;border-radius:18px;padding:clamp(14px,3vw,24px);margin-bottom:16px}
+.switch,.controls,.metrics{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+button,input{font:inherit}
+button{border:1px solid #93b1a7;background:#fff;color:#193449;border-radius:10px;padding:10px 14px;min-height:44px;cursor:pointer;font-weight:650}
+button[aria-pressed=true],button.primary{background:#075f54;color:white;border-color:#075f54}
+button:disabled{opacity:.55;cursor:default}
+:focus-visible{outline:3px solid #a34713;outline-offset:3px}
+.scene{position:relative;overflow:hidden;height:215px;border-radius:12px;margin:14px 0;background:linear-gradient(#d7edf5 0 68%,#b9c9ba 68% 75%,#3b4c59 75%);isolation:isolate}
+.road{position:absolute;left:0;right:0;bottom:23px;border-top:2px dashed #ebead7}
+.stop{position:absolute;top:43px;width:42px;height:99px;border-left:4px solid #37515c}
+.stop span{display:block;background:#fff;color:#193449;border:1px solid #37515c;border-radius:4px;padding:2px 4px;font-size:.8rem;font-weight:750;white-space:nowrap;width:max-content}
+.bus{position:absolute;bottom:45px;width:clamp(87px,16vw,150px);height:67px;transform:translateX(-50%);border-radius:12px 16px 6px 6px;background:#075f54;border:2px solid #173a42;display:flex;justify-content:space-evenly;align-items:flex-start;padding:7px 5px;gap:4px}
+.bus::before,.bus::after{content:"";position:absolute;bottom:-9px;width:17px;height:17px;background:#26343e;border:3px solid #677b84;border-radius:50%}
+.bus::before{left:13%}.bus::after{right:13%}
+.window{width:28%;height:26px;border-radius:4px;background:#cae7ed}
+.passenger{display:grid;place-items:center;color:#78340b;background:#ffe1ad;font-weight:800}
+.caption{margin:8px 0 12px;color:#3a5863}
+.metrics{margin-top:14px}
+.metric{background:#eff6f3;border-radius:10px;padding:9px 12px}
+.metric output{display:block;font-size:1.15rem;font-weight:750}
+.control-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin:16px 0}
+input[type=range]{width:100%;accent-color:#075f54}
+table{border-collapse:collapse;width:100%;margin:12px 0}
+th,td{text-align:left;padding:10px 5px;border-bottom:1px solid #ceded8}
+td input{width:100%;max-width:115px;padding:8px;border:1px solid #789c91;border-radius:6px}
+td label{display:flex;gap:5px;align-items:center}
+.formula{font-weight:750;color:#075f54}
+.status{min-height:1.5em}
+a{color:#075f54}
+@media(max-width:480px){.scene{height:185px}th,td{font-size:.88rem}}
+</style>
+</head>
+<body>
+<main>
+<header>
+  <p class="level">Physique-chimie · Seconde professionnelle</p>
+  <h1>Le bus et la rue</h1>
+  <p>Une passagère est assise dans un bus qui roule en ligne droite à vitesse constante. Est-elle en mouvement ?</p>
+</header>
+
+<section class="card" aria-labelledby="observation">
+  <h2 id="observation">1. Observer la passagère</h2>
+  <p>Fais une hypothèse pour chaque référentiel, puis lance le trajet. La lettre P représente la passagère.</p>
+  <div class="switch" role="group" aria-label="Référentiel d’observation">
+    <button type="button" id="street-view" aria-pressed="true">Depuis la rue</button>
+    <button type="button" id="bus-view" aria-pressed="false">Depuis le bus</button>
+  </div>
+  <div class="scene" aria-hidden="true">
+    <div class="road"></div>
+    <div class="stop" id="stop"><span>Arrêt</span></div>
+    <div class="bus" id="bus"><span class="window"></span><span class="window passenger">P</span><span class="window"></span></div>
+  </div>
+  <p class="caption" id="view-caption">Le point de vue est fixé à l’arrêt. Le bus et la passagère avancent ensemble.</p>
+  <div class="control-row">
+    <label for="distance">Trajet du bus dans la rue <strong><output id="distance-label">60 m</output></strong>
+      <input type="range" id="distance" min="20" max="100" step="10" value="60">
+    </label>
+    <label for="duration">Durée du trajet <strong><output id="duration-label">6 s</output></strong>
+      <input type="range" id="duration" min="4" max="10" step="1" value="6">
+    </label>
+  </div>
+  <div class="controls">
+    <button type="button" class="primary" id="play">Lancer</button>
+    <button type="button" id="reset">Revenir au départ</button>
+    <button type="button" id="record" disabled>Relever les mesures</button>
+  </div>
+  <div class="metrics">
+    <div class="metric">Chronomètre <output id="time">0,0 s</output></div>
+    <div class="metric">Distance parcourue par P <output id="travel">0,0 m</output></div>
+  </div>
+  <p class="status" id="measurement-status" role="status">Pour mesurer, observe le trajet jusqu’à son terme dans chaque référentiel.</p>
+</section>
+
+<section class="card" aria-labelledby="calcul">
+  <h2 id="calcul">2. Calculer et comparer</h2>
+  <p>Pour chaque relevé, divise la distance parcourue par la durée du trajet. Entre le résultat en m/s, au dixième si nécessaire.</p>
+  <p class="formula">Vitesse moyenne = distance parcourue ÷ durée</p>
+  <form id="answers" novalidate>
+    <table>
+      <thead><tr><th scope="col">Référentiel</th><th scope="col">Distance</th><th scope="col">Durée</th><th scope="col">Vitesse</th></tr></thead>
+      <tbody>
+        <tr><th scope="row">Rue</th><td id="street-distance">—</td><td id="street-duration">—</td><td><label><input id="street-answer" aria-label="Vitesse dans le référentiel de la rue" inputmode="decimal" disabled><span>m/s</span></label></td></tr>
+        <tr><th scope="row">Bus</th><td id="bus-distance">—</td><td id="bus-duration">—</td><td><label><input id="bus-answer" aria-label="Vitesse dans le référentiel du bus" inputmode="decimal" disabled><span>m/s</span></label></td></tr>
+      </tbody>
+    </table>
+    <button type="submit" class="primary" id="check" disabled>Vérifier les calculs</button>
+    <p class="status" id="feedback" role="status">Relève les mesures dans les deux référentiels pour comparer.</p>
+  </form>
+  <details id="conclusion" hidden>
+    <summary>Expliquer le résultat</summary>
+    <p>La durée observée est la même. Dans le référentiel de la rue, la passagère parcourt la même distance que le bus. Dans le référentiel du bus, sa position reste fixe, donc sa vitesse est nulle. La description du mouvement et la valeur de la vitesse dépendent du référentiel choisi.</p>
+    <p>Change la distance ou la durée et recommence. Quelle vitesse peut changer ? Laquelle reste toujours nulle ?</p>
+  </details>
+</section>
+</main>
+<script>
+"use strict";
+
+const byId = id => document.getElementById(id);
+const format = new Intl.NumberFormat("fr-FR", {
+  minimumFractionDigits: 1,
+  maximumFractionDigits: 1
+});
+const frames = {
+  street: { name: "rue", caption: "Le point de vue est fixé à l’arrêt. Le bus et la passagère avancent ensemble." },
+  bus: { name: "bus", caption: "Le point de vue est fixé au bus. La passagère reste en place et l’arrêt défile vers l’arrière." }
+};
+const distance = byId("distance");
+const duration = byId("duration");
+const play = byId("play");
+const record = byId("record");
+const check = byId("check");
+const feedback = byId("feedback");
+const status = byId("measurement-status");
+const conclusion = byId("conclusion");
+
+let frame = "street";
+let elapsed = 0;
+let startedAt = null;
+let animation = 0;
+let recorded = {};
+
+function measuredDistance(reference, time) {
+  return reference === "street" ? Number(distance.value) * time / Number(duration.value) : 0;
+}
+
+function render() {
+  const fraction = elapsed / Number(duration.value);
+  const roadMotion = fraction * Number(distance.value) / 100 * 54;
+  byId("bus").style.left = (frame === "street" ? 31 + roadMotion : 31) + "%";
+  byId("stop").style.left = (frame === "street" ? 12 : 12 - roadMotion) + "%";
+  for (const reference of Object.keys(frames)) {
+    byId(reference + "-view").setAttribute("aria-pressed", String(reference === frame));
+  }
+  byId("view-caption").textContent = frames[frame].caption;
+  byId("time").textContent = format.format(elapsed) + " s";
+  byId("travel").textContent = format.format(measuredDistance(frame, elapsed)) + " m";
+  byId("distance-label").textContent = distance.value + " m";
+  byId("duration-label").textContent = duration.value + " s";
+  record.disabled = fraction < 1 || frame in recorded;
+  play.textContent = startedAt !== null ? "Pause" : fraction === 1 ? "Rejouer" : elapsed > 0 ? "Reprendre" : "Lancer";
+}
+
+function stopAnimation() {
+  cancelAnimationFrame(animation);
+  startedAt = null;
+}
+
+function tick(now) {
+  elapsed = Math.min(Number(duration.value), (now - startedAt) / 1000);
+  if (elapsed < Number(duration.value)) {
+    animation = requestAnimationFrame(tick);
+  } else {
+    stopAnimation();
+    status.textContent = "Trajet terminé. Relève les mesures, puis change de référentiel pour relever celles du même trajet.";
+  }
+  render();
+}
+
+play.addEventListener("click", () => {
+  if (startedAt !== null) {
+    stopAnimation();
+  } else {
+    if (elapsed >= Number(duration.value)) elapsed = 0;
+    startedAt = performance.now() - elapsed * 1000;
+    animation = requestAnimationFrame(tick);
+    status.textContent = "Trajet en cours.";
+  }
+  render();
+});
+
+function resetTrip() {
+  stopAnimation();
+  elapsed = 0;
+  status.textContent = "Au départ. Lance le trajet pour mesurer.";
+  render();
+}
+
+byId("reset").addEventListener("click", resetTrip);
+
+for (const reference of Object.keys(frames)) {
+  byId(reference + "-view").addEventListener("click", () => {
+    frame = reference;
+    render();
+  });
+}
+
+for (const slider of [distance, duration]) {
+  slider.addEventListener("input", () => {
+    recorded = {};
+    conclusion.hidden = true;
+    conclusion.open = false;
+    for (const reference of Object.keys(frames)) {
+      byId(reference + "-distance").textContent = "—";
+      byId(reference + "-duration").textContent = "—";
+      byId(reference + "-answer").value = "";
+      byId(reference + "-answer").disabled = true;
+    }
+    check.disabled = true;
+    feedback.textContent = "Nouveau trajet. Relève les mesures dans les deux référentiels.";
+    resetTrip();
+  });
+}
+
+record.addEventListener("click", () => {
+  recorded[frame] = { distance: measuredDistance(frame, elapsed), duration: elapsed };
+  byId(frame + "-distance").textContent = format.format(recorded[frame].distance) + " m";
+  byId(frame + "-duration").textContent = format.format(recorded[frame].duration) + " s";
+  byId(frame + "-answer").disabled = false;
+  check.disabled = Object.keys(recorded).length !== 2;
+  status.textContent = check.disabled
+    ? "Mesure enregistrée. Change de référentiel et relève la mesure du même trajet."
+    : "Les deux mesures sont enregistrées. Tu peux calculer les vitesses.";
+});
+
+byId("answers").addEventListener("submit", event => {
+  event.preventDefault();
+  if (check.disabled) return;
+  const messages = [];
+  for (const reference of Object.keys(frames)) {
+    const value = byId(reference + "-answer").value.trim().replace(",", ".");
+    const number = Number(value);
+    const expected = recorded[reference].distance / recorded[reference].duration;
+    if (!/^\d+(?:\.\d+)?$/.test(value) || Math.abs(number - expected) > 0.0500001) {
+      messages.push("Dans le référentiel " + (reference === "street" ? "de la rue" : "du bus") + ", divise " +
+        format.format(recorded[reference].distance) + " m par " + format.format(recorded[reference].duration) + " s.");
+    }
+  }
+  conclusion.hidden = messages.length > 0;
+  if (!messages.length) conclusion.open = true;
+  feedback.textContent = messages.length ? messages.join(" ") : "Les deux vitesses sont correctes.";
+});
+
+render();
+</script>
+</body>
+</html>
