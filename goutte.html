@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Une goutte dans l’huile | Laboratoire virtuel</title>
+<style>
+:root{font:16px system-ui,sans-serif;background:#eff4f3;color:#183236;--green:#12645a;--line:#c9d9d6}
+*{box-sizing:border-box}body{margin:0}main{width:min(1080px,100% - 32px);margin:auto;padding:26px 0 40px}
+header{margin-bottom:24px}header p{max-width:61ch;margin:8px 0}h1{font-size:clamp(2.25rem,7vw,4.2rem);line-height:1;letter-spacing:-.05em;margin:9px 0}
+.level{font-size:.9rem;font-weight:700;color:var(--green)}
+.workspace{display:grid;grid-template-columns:minmax(280px,.9fr) minmax(320px,1.1fr);gap:16px;align-items:start}
+.card{border:1px solid var(--line);border-radius:16px;padding:18px;background:white;margin-bottom:16px}
+h2{font-size:1.18rem;margin:0 0 .6rem}p{line-height:1.45}button,input{font:inherit}button{padding:9px 12px;border:1px solid #a3bdb7;border-radius:8px;min-height:44px;background:white;color:#183236;font-weight:650;cursor:pointer}
+button.primary{background:var(--green);border-color:var(--green);color:white}button:disabled{opacity:.5;cursor:default}
+:focus-visible{outline:3px solid #ae5921;outline-offset:3px}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+.scene{height:330px;position:relative;overflow:hidden;border-radius:12px;background:linear-gradient(140deg,#edf5f4,#e2f0ee);isolation:isolate}
+.scale{position:absolute;inset:32px auto 32px 0;left:calc(50% - 80px);width:45px;border-right:1px solid #77918f}
+.tick{position:absolute;right:0;transform:translateY(-50%);font-size:.72rem;line-height:1;color:#355955;display:flex;align-items:center;gap:5px}
+.tick:after{content:"";width:10px;border-top:1px solid currentColor}
+.tube{position:absolute;inset:26px auto 24px 50%;transform:translateX(-50%);width:65px;border:2px solid #739a9e;border-top:4px double #739a9e;border-radius:7px 7px 18px 18px;background:linear-gradient(90deg,#ffffff80,#ffffff22 25%,transparent 77%,#91b6ba42),linear-gradient(#ffffff70 0 3%,#efc984 3% 100%);box-shadow:inset 5px 0 8px #fff9,0 8px 13px #25484622}
+.tube:after{content:"";position:absolute;bottom:-4px;left:-14px;right:-14px;height:7px;border-radius:3px;background:#7b9c9b;z-index:-1}
+.axis{position:absolute;inset:32px 0}
+.drop{position:absolute;left:50%;width:14px;height:17px;transform:translate(-50%,-50%);border-radius:60% 60% 55% 55%;background:radial-gradient(circle at 35% 30%,#c49beb,#7429a4 58%,#441662);box-shadow:0 0 0 1px #502166;z-index:2}
+.mark{position:absolute;left:calc(50% - 32px);width:clamp(115px,42%,178px);border-top:2px dashed #2b635f;z-index:1}
+.mark span{position:absolute;right:0;top:0;transform:translateY(-50%);padding:3px 7px;border-radius:5px;background:#216962;color:white;font-weight:800}
+.measure{font-size:2rem;font-variant-numeric:tabular-nums;font-weight:750;display:block;margin:8px 0;color:var(--green)}
+.status{min-height:2.8em;color:#345954}
+label{display:block;font-weight:650;margin:10px 0 6px}label input{margin-top:5px}
+input{display:block;width:min(100%,180px);min-height:42px;padding:6px 9px;border:1px solid #829e98;border-radius:7px}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:8px 4px;border-bottom:1px solid var(--line);font-size:.88rem}
+details{margin-top:14px}summary{cursor:pointer;font-weight:700;color:var(--green)}
+@media(max-width:680px){.workspace{grid-template-columns:1fr}.scene{height:280px}}
+</style>
+</head>
+<body>
+<main>
+<header>
+  <p class="level">Physique-chimie · Seconde bac pro</p>
+  <h1>Une goutte dans l’huile</h1>
+  <p>Comment mesurer la vitesse moyenne d’une goutte d’eau colorée qui descend dans l’huile ?</p>
+</header>
+<div class="workspace">
+  <section class="card" aria-labelledby="measure-heading">
+    <h2 id="measure-heading">1. Observer et chronométrer</h2>
+    <p>Prends l’éprouvette comme référentiel. Lis sur la règle la position des repères A et B.</p>
+    <div class="scene" role="img" aria-label="Éprouvette d’huile avec une goutte violette et une règle graduée vers le bas. Repères A à 4 centimètres et B à 16 centimètres.">
+      <div class="tube" aria-hidden="true"></div>
+      <div class="scale" aria-hidden="true" id="scale"></div>
+      <div class="axis" aria-hidden="true">
+        <div class="mark" style="top:20%"><span>A</span></div>
+        <div class="mark" style="top:80%"><span>B</span></div>
+        <div class="drop" id="drop" style="top:2%"></div>
+      </div>
+    </div>
+    <p>Lance une goutte. Démarre le chronomètre quand son <strong>centre</strong> passe devant A. Arrête-le quand il passe devant B.</p>
+    <output id="clock" class="measure" aria-label="Chronomètre">0,00 s</output>
+    <div class="actions">
+      <button type="button" id="release" class="primary">Lâcher une goutte</button>
+      <button type="button" id="timer" disabled>Démarrer le chrono</button>
+      <button type="button" id="retry" disabled>Refaire l’essai</button>
+    </div>
+    <p class="status" id="message" role="status">Prêt pour le premier essai.</p>
+  </section>
+  <div>
+    <section class="card" aria-labelledby="calc-heading">
+      <h2 id="calc-heading">2. Calculer la vitesse moyenne</h2>
+      <p>Calcule la distance entre les repères, convertis-la en mètres, puis applique <strong>v = d ÷ Δt</strong>. Arrondis la vitesse au millième de m/s.</p>
+      <form id="calc" novalidate>
+        <label for="distance">Distance AB (m)</label>
+        <input id="distance" inputmode="decimal" type="text" autocomplete="off">
+        <label for="speed">Vitesse moyenne (m/s)</label>
+        <input id="speed" inputmode="decimal" type="text" autocomplete="off" disabled>
+        <div class="actions"><button type="submit" class="primary" id="check" disabled>Vérifier et enregistrer</button></div>
+        <p class="status" id="feedback" role="status">Chronomètre le passage de la goutte entre A et B.</p>
+      </form>
+    </section>
+    <section class="card" aria-labelledby="results-heading">
+      <h2 id="results-heading">3. Comparer les essais</h2>
+      <table>
+        <thead><tr><th scope="col">Essai</th><th scope="col">d (m)</th><th scope="col">Δt (s)</th><th scope="col">v (m/s)</th></tr></thead>
+        <tbody id="results"></tbody>
+      </table>
+      <p id="comparison" hidden>Les vitesses sont-elles proches ? La taille des gouttes et le moment où tu touches le chronomètre peuvent-ils expliquer les écarts ?</p>
+      <details id="summary" hidden>
+        <summary>Ce que la mesure permet de conclure</summary>
+        <p>Tu as calculé une vitesse moyenne entre A et B dans le référentiel de l’éprouvette. Pour savoir si la vitesse est approximativement constante, mesure le temps mis par une même goutte pour parcourir deux intervalles successifs de même longueur.</p>
+      </details>
+      <div class="actions"><button type="button" id="reset">Reprendre depuis le début</button></div>
+    </section>
+  </div>
+</div>
+</main>
+<script>
+"use strict";
+const get = id => document.getElementById(id);
+const release = get("release"), timer = get("timer"), retry = get("retry");
+const clock = get("clock"), message = get("message"), feedback = get("feedback");
+const distance = get("distance"), speed = get("speed"), check = get("check");
+const markerA = 4, markerB = 16, depth = 20, distanceM = (markerB - markerA) / 100;
+const velocities = [3.2, 3.4, 3.1];
+const records = [];
+let launchedAt = null, startedAt = null, measured = null, startPosition = null, frame = 0, attempt = "ready";
+const format = (number, digits) => number.toFixed(digits).replace(".", ",");
+const read = field => {
+  const value = field.value.trim().replace(",", ".");
+  return /^\d+(?:\.\d+)?$/.test(value) ? Number(value) : NaN;
+};
+for (let cm = 0; cm <= depth; cm += 2) {
+  const tick = document.createElement("span");
+  tick.className = "tick";
+  tick.style.top = cm / depth * 100 + "%";
+  tick.textContent = cm + " cm";
+  get("scale").append(tick);
+}
+function position(now) {
+  return 0.4 + (now - launchedAt) / 1000 * velocities[records.length];
+}
+function drawDrop(cm) {
+  get("drop").style.top = Math.min(cm / depth * 100, 98) + "%";
+}
+function drawTime(seconds) {
+  clock.textContent = format(seconds, 2) + " s";
+}
+function drawControls() {
+  release.disabled = attempt !== "ready" || records.length >= velocities.length;
+  timer.disabled = attempt !== "falling";
+  timer.textContent = startedAt === null ? "Démarrer le chrono" : "Arrêter le chrono";
+  retry.disabled = attempt === "ready";
+  speed.disabled = check.disabled = attempt !== "measured";
+}
+function resetAttempt() {
+  cancelAnimationFrame(frame);
+  launchedAt = startedAt = measured = startPosition = null;
+  attempt = "ready";
+  drawDrop(0.4);
+  drawTime(0);
+  speed.value = "";
+  feedback.textContent = records.length === velocities.length ? "Les trois essais sont enregistrés." : "Chronomètre le passage de la goutte entre A et B.";
+  message.textContent = records.length === velocities.length ? "Les trois essais sont terminés." : "Prêt pour l’essai " + (records.length + 1) + ".";
+  drawControls();
+}
+function update(now) {
+  const cm = position(now);
+  drawDrop(cm);
+  if (startedAt !== null && measured === null) drawTime((now - startedAt) / 1000);
+  if (cm < depth) {
+    frame = requestAnimationFrame(update);
+  } else if (attempt === "falling") {
+    attempt = "missed";
+    message.textContent = "La goutte a dépassé B. Recommence l’essai et arrête le chrono au passage de B.";
+    drawControls();
+  }
+}
+release.addEventListener("click", () => {
+  launchedAt = performance.now();
+  attempt = "falling";
+  message.textContent = "Observe le centre de la goutte. Démarre au repère A.";
+  drawControls();
+  frame = requestAnimationFrame(update);
+});
+timer.addEventListener("click", () => {
+  const now = performance.now(), cm = position(now);
+  if (startedAt === null) {
+    startedAt = now;
+    startPosition = cm;
+    message.textContent = "Chrono en cours. Arrête-le au repère B.";
+  } else {
+    measured = Math.round((now - startedAt) / 10) / 100;
+    drawTime(measured);
+    if (Math.abs(startPosition - markerA) > 1.5 || Math.abs(cm - markerB) > 1.5) {
+      attempt = "missed";
+      message.textContent = "Un des passages a été pris trop loin de son repère. Refais l’essai.";
+    } else {
+      attempt = "measured";
+      message.textContent = "Durée mesurée. Tu peux calculer la vitesse moyenne.";
+      feedback.textContent = "Utilise le temps affiché au chronomètre.";
+    }
+  }
+  drawControls();
+});
+retry.addEventListener("click", resetAttempt);
+get("calc").addEventListener("submit", event => {
+  event.preventDefault();
+  if (attempt !== "measured") return;
+  if (Math.abs(read(distance) - distanceM) > 0.00001 || !Number.isFinite(read(distance))) {
+    feedback.textContent = "Soustrais la position de A à celle de B, puis convertis les centimètres en mètres.";
+    return;
+  }
+  const expected = Number((distanceM / measured).toFixed(3));
+  if (Math.abs(read(speed) - expected) > 0.00001 || !Number.isFinite(read(speed))) {
+    feedback.textContent = "Divise la distance en mètres par la durée affichée, puis arrondis à trois décimales.";
+    return;
+  }
+  records.push({seconds:measured,value:expected});
+  renderResults();
+  resetAttempt();
+  feedback.textContent = "Calcul correct. L’essai a été enregistré.";
+});
+function renderResults() {
+  get("results").replaceChildren(...velocities.map((_,index) => {
+    const record = records[index];
+    const row = document.createElement("tr");
+    const heading = document.createElement("th");
+    heading.scope = "row";
+    heading.textContent = index + 1;
+    row.append(heading);
+    for (const value of record ? [format(distanceM,3), format(record.seconds,2), format(record.value,3)] : ["—","—","—"]) {
+      row.insertCell().textContent = value;
+    }
+    return row;
+  }));
+  get("comparison").hidden = get("summary").hidden = records.length < velocities.length;
+}
+get("reset").addEventListener("click", () => {
+  records.length = 0;
+  distance.value = "";
+  get("summary").open = false;
+  renderResults();
+  resetAttempt();
+});
+renderResults();
+resetAttempt();
+</script>
+</body>
+</html>
