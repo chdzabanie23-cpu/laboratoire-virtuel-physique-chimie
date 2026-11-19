@@ -44,6 +44,21 @@ details{margin-top:14px}summary{cursor:pointer;font-weight:700;color:var(--green
 .prep{margin:12px 0;padding:12px;background:#eef6f3;border-radius:10px}
 .prep h3{font-size:1rem;margin:0}.prep p{margin:6px 0 10px}
 @media (prefers-reduced-motion:reduce){.oil{transition:none}}
+
+.equipment{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+.equipment button{display:inline-flex;align-items:center;gap:7px;padding:6px 9px}
+.equipment button[aria-pressed=true]{background:#e2f3ed;border-color:var(--green);box-shadow:inset 0 0 0 1px var(--green)}
+.equipment-icon{display:inline-block;position:relative;width:20px;height:27px;flex:none}
+.bottle-icon{height:21px;margin-top:6px;border:1px solid #865c24;border-radius:6px 6px 4px 4px;background:linear-gradient(90deg,#fff2c1,#d4a049)}
+.bottle-icon:before{content:"";position:absolute;left:5px;right:5px;top:-6px;height:5px;background:#306454;border-radius:2px}
+.ruler-icon{width:13px;background:repeating-linear-gradient(#456f61 0 1px,transparent 1px 4px) left center/5px 22px no-repeat,#f2d49a;border:1px solid #896a2e;border-radius:2px}
+.marker-icon{width:11px;margin:0 4px;border-radius:4px 4px 2px 2px;background:linear-gradient(#314959 0 27%,#8e57a5 27% 82%,#314959 82%)}
+.pour-target{position:absolute;inset:26px auto 24px 50%;transform:translateX(-50%);width:65px;padding:0;border:2px dashed var(--green);background:#c7f0e44d;z-index:3}
+.scale{z-index:3}
+button.tick{border:0;border-radius:3px;background:transparent;min-height:0;height:19px;padding:0 1px;font-weight:600;white-space:nowrap}
+button.tick:not(:disabled){background:#fff;color:#125e52;min-width:43px}
+button.tick:disabled{opacity:1;cursor:default}
+@media(max-width:350px){.equipment button{font-size:.85rem}}
 </style>
 </head>
 <body>
@@ -56,11 +71,17 @@ details{margin-top:14px}summary{cursor:pointer;font-weight:700;color:var(--green
 <div class="workspace">
   <section class="card" aria-labelledby="measure-heading">
     <h2 id="measure-heading">1. Préparer et chronométrer</h2>
-    <p>Prends l’éprouvette de 100 mL comme référentiel. La règle graduée en centimètres indique la position de la goutte.</p>
-    <div class="scene" id="scene" role="img" aria-label="Éprouvette graduée de 100 mL vide, à côté d’une règle.">
+    <p>Prends l’éprouvette de 100 mL comme référentiel. Utilise le matériel pour préparer la mesure.</p>
+    <div class="equipment" role="group" aria-label="Matériel à manipuler">
+      <button type="button" id="oil-bottle" aria-pressed="false"><span class="equipment-icon bottle-icon" aria-hidden="true"></span>Bouteille d’huile</button>
+      <button type="button" id="ruler" aria-pressed="false" disabled><span class="equipment-icon ruler-icon" aria-hidden="true"></span>Règle</button>
+      <button type="button" id="marker" aria-pressed="false" disabled><span class="equipment-icon marker-icon" aria-hidden="true"></span>Marqueur</button>
+    </div>
+    <div class="scene" id="scene" role="group" aria-label="Éprouvette graduée de 100 mL vide, à côté d’une règle.">
       <div class="tube" aria-hidden="true"><span>100 mL</span><div class="oil"></div></div>
       <div class="pasteur" aria-hidden="true" hidden id="pipette"><span></span></div>
-      <div class="scale" aria-hidden="true" id="scale"></div>
+      <button type="button" id="pour-target" class="pour-target" hidden aria-label="Verser l’huile dans l’éprouvette"></button>
+      <div class="scale" id="scale" role="group" aria-label="Graduations de la règle" hidden></div>
       <div class="axis" aria-hidden="true">
         <div class="mark" id="mark-a" style="top:20%" hidden><span>A</span></div>
         <div class="mark" id="mark-b" style="top:80%" hidden><span>B</span></div>
@@ -128,30 +149,84 @@ const preparation = [
 ];
 let prepStep = 0;
 let pipetteLoaded = false;
+let selectedTool = null;
+let rulerVisible = false;
+const oilBottle = get("oil-bottle"), ruler = get("ruler"), marker = get("marker");
+const scale = get("scale"), pourTarget = get("pour-target");
+const ticks = [];
+let placementFeedback = "";
 function drawPreparation() {
   get("scene").classList.toggle("has-oil", prepStep > 0);
   get("mark-a").hidden = prepStep < 2;
   get("mark-b").hidden = prepStep < 3;
   get("pipette").hidden = !pipetteLoaded;
-  prepare.hidden = pipetteLoaded || records.length >= velocities.length || attempt !== "ready";
+  const marking = prepStep === 1 || prepStep === 2;
+  oilBottle.disabled = prepStep !== 0;
+  ruler.disabled = prepStep === 0;
+  marker.disabled = !marking || !rulerVisible;
+  oilBottle.setAttribute("aria-pressed", String(selectedTool === "oil"));
+  ruler.setAttribute("aria-pressed", String(rulerVisible));
+  marker.setAttribute("aria-pressed", String(selectedTool === "marker"));
+  pourTarget.hidden = selectedTool !== "oil";
+  scale.hidden = !rulerVisible;
+  for (const tick of ticks) tick.disabled = !marking || selectedTool !== "marker";
+  prepare.hidden = prepStep !== 3 || pipetteLoaded || records.length >= velocities.length || attempt !== "ready";
   const [label, instructions] = preparation[prepStep];
   prepare.textContent = label;
+  const instruction = placementFeedback || (prepStep === 0
+    ? selectedTool === "oil" ? "Touche l’éprouvette pour y verser l’huile." : "Sélectionne la bouteille d’huile."
+    : marking
+      ? !rulerVisible ? "Sélectionne la règle pour la placer à côté de l’éprouvette."
+        : selectedTool !== "marker" ? "Sélectionne le marqueur."
+          : prepStep === 1 ? "Touche la graduation 4 cm pour tracer le repère A."
+            : "Touche la graduation 16 cm pour tracer le repère B."
+      : instructions);
   prepDescription.textContent = records.length >= velocities.length
     ? "Les trois essais sont terminés."
     : pipetteLoaded
       ? "La pipette est chargée. Dépose une seule goutte à la surface de l’huile, au centre de l’éprouvette."
       : attempt === "ready"
-        ? instructions
+        ? instruction
         : "L’éprouvette contient l’huile et les deux repères sont en place.";
   const sceneState = prepStep === 0 ? "vide" : "contenant de l’huile";
   const marks = prepStep < 2 ? "" : prepStep === 2 ? " Repère A à 4 cm." : " Repères A à 4 cm et B à 16 cm.";
   get("scene").setAttribute("aria-label", "Éprouvette graduée de 100 mL " + sceneState + ", à côté d’une règle." + marks);
 }
-prepare.addEventListener("click", () => {
-  if (prepStep < preparation.length - 1) prepStep++;
-  else pipetteLoaded = true;
+oilBottle.addEventListener("click", () => {
+  selectedTool = "oil";
   drawControls();
 });
+pourTarget.addEventListener("click", () => {
+  selectedTool = null;
+  prepStep = 1;
+  drawControls();
+  ruler.focus();
+});
+ruler.addEventListener("click", () => {
+  rulerVisible = true;
+  drawControls();
+  if (prepStep < 3) marker.focus();
+});
+marker.addEventListener("click", () => {
+  selectedTool = "marker";
+  placementFeedback = "";
+  drawControls();
+});
+prepare.addEventListener("click", () => {
+  pipetteLoaded = true;
+  drawControls();
+});
+function markAt(cm) {
+  if (selectedTool !== "marker" || (prepStep !== 1 && prepStep !== 2)) return;
+  const expected = prepStep === 1 ? markerA : markerB;
+  placementFeedback = cm === expected ? "" : "Ce n’est pas la bonne graduation. Cherche " + expected + " cm.";
+  if (!placementFeedback) {
+    prepStep++;
+    if (prepStep === 3) selectedTool = null;
+  }
+  drawControls();
+  if (prepStep === 3) prepare.focus();
+}
 let launchedAt = null, startedAt = null, measured = null, startPosition = null, frame = 0, attempt = "ready";
 const format = (number, digits) => number.toFixed(digits).replace(".", ",");
 const read = field => {
@@ -159,7 +234,10 @@ const read = field => {
   return /^\d+(?:\.\d+)?$/.test(value) ? Number(value) : NaN;
 };
 for (let cm = 0; cm <= depth; cm += 2) {
-  const tick = document.createElement("span");
+  const tick = document.createElement("button");
+  tick.type = "button";
+  tick.addEventListener("click", () => markAt(cm));
+  ticks.push(tick);
   tick.className = "tick";
   tick.style.top = cm / depth * 100 + "%";
   tick.textContent = cm + " cm";
@@ -271,6 +349,9 @@ get("reset").addEventListener("click", () => {
   records.length = 0;
   prepStep = 0;
   pipetteLoaded = false;
+  selectedTool = null;
+  rulerVisible = false;
+  placementFeedback = "";
   distance.value = "";
   get("summary").open = false;
   renderResults();
