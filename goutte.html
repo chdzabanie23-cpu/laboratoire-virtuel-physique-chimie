@@ -69,6 +69,11 @@ button.pasteur{min-height:54px;width:44px;padding:0;background:transparent;borde
 .scene.pouring-oil .pouring{visibility:visible}
 .pouring:after{content:"";position:absolute;top:-16px;left:7px;width:4px;height:13px;background:#d5a650;border-radius:4px;transform:rotate(-35deg)}
 #slow[aria-pressed=true]{background:#e2f3ed;border-color:var(--green)}
+
+.scale{left:calc(50% - 96px);width:60px;border:1px solid #927246;border-radius:3px;background:#f4dfa8;box-shadow:0 1px 5px #5e472933}
+button.tick{right:2px;color:#533b14}
+button.tick:not(:disabled){color:#14574c;background:#fff;min-width:49px}
+.ruler-status{padding:8px 11px;margin:9px 0;border-left:3px solid var(--green);background:#eef6f3;color:#19483e;font-size:.9rem}
 </style>
 </head>
 <body>
@@ -84,7 +89,7 @@ button.pasteur{min-height:54px;width:44px;padding:0;background:transparent;borde
     <p>Prends l’éprouvette de 100 mL comme référentiel. Utilise le matériel pour préparer la mesure.</p>
     <div class="equipment" role="group" aria-label="Matériel à manipuler">
       <button type="button" id="oil-bottle" aria-pressed="false"><span class="equipment-icon bottle-icon" aria-hidden="true"></span>Bouteille d’huile</button>
-      <button type="button" id="ruler" aria-pressed="false" disabled><span class="equipment-icon ruler-icon" aria-hidden="true"></span>Règle</button>
+      <button type="button" id="ruler" aria-pressed="false" aria-controls="scale"><span class="equipment-icon ruler-icon" aria-hidden="true"></span>Règle</button>
       <button type="button" id="marker" aria-pressed="false" disabled><span class="equipment-icon marker-icon" aria-hidden="true"></span>Marqueur</button>
     </div>
     <div class="scene" id="scene" role="group" aria-label="Éprouvette graduée de 100 mL vide, à côté d’une règle.">
@@ -99,6 +104,7 @@ button.pasteur{min-height:54px;width:44px;padding:0;background:transparent;borde
         <div class="drop" id="drop" style="top:2%" hidden></div>
       </div>
     </div>
+    <p class="ruler-status" id="ruler-status" role="status" hidden></p>
     <div class="prep">
       <h3>Préparation</h3>
       <p id="prep-description" role="status">Verse l’huile dans l’éprouvette de 100 mL en laissant un peu d’espace sous le bord.</p>
@@ -180,13 +186,22 @@ function drawPreparation() {
   get("pipette").hidden = !pipetteLoaded;
   const marking = prepStep === 1 || prepStep === 2;
   oilBottle.disabled = prepStep !== 0;
-  ruler.disabled = prepStep === 0;
+  ruler.disabled = attempt !== "ready";
   marker.disabled = !marking || !rulerVisible;
   oilBottle.setAttribute("aria-pressed", String(selectedTool === "oil"));
   ruler.setAttribute("aria-pressed", String(rulerVisible));
   marker.setAttribute("aria-pressed", String(selectedTool === "marker"));
   pourTarget.hidden = selectedTool !== "oil";
   scale.hidden = !rulerVisible;
+  const rulerStatus = get("ruler-status");
+  rulerStatus.hidden = !rulerVisible;
+  const reading = markerA === null ? "Règle placée à gauche de l’éprouvette."
+    : markerB === null ? "Lecture sur la règle : A = " + markerA + " cm."
+    : "Lecture sur la règle : A = " + markerA + " cm · B = " + markerB + " cm. Calcule la distance AB.";
+  if (rulerStatus.textContent !== reading) rulerStatus.textContent = reading;
+  for (const [id, cm] of [["mark-a",markerA],["mark-b",markerB]]) {
+    if (cm !== null) get(id).firstElementChild.textContent = id === "mark-a" ? "A · " + cm + " cm" : "B · " + cm + " cm";
+  }
   for (const tick of ticks) tick.disabled = !marking || selectedTool !== "marker";
   prepare.hidden = prepStep !== 3 || pipetteLoaded || records.length >= trialCount || attempt !== "ready";
   const [label, instructions] = preparation[3];
@@ -226,10 +241,10 @@ function pourOil() {
 }
 pourTarget.addEventListener("click", pourOil);
 function placeRuler() {
-  if (prepStep === 0) return;
+  if (attempt !== "ready") return;
   rulerVisible = true;
   drawControls();
-  if (prepStep < 3) marker.focus();
+  if (prepStep < 3 && prepStep > 0) marker.focus();
 }
 ruler.addEventListener("click", placeRuler);
 marker.addEventListener("click", () => {
@@ -421,12 +436,12 @@ function enableDrag(button, drop) {
     if (!event.isPrimary || event.button !== 0) return;
     ignoreClick = false;
     origin = {id:event.pointerId, x:event.clientX, y:event.clientY};
-    button.setPointerCapture(event.pointerId);
   });
   button.addEventListener("pointermove", event => {
     if (origin?.id !== event.pointerId) return;
     if (!preview && Math.hypot(event.clientX-origin.x,event.clientY-origin.y) < 8) return;
     if (!preview) {
+      if (!button.hasPointerCapture(event.pointerId)) button.setPointerCapture(event.pointerId);
       preview = document.createElement("span");
       preview.className = "drag-preview";
       preview.setAttribute("aria-hidden", "true");
