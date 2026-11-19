@@ -59,6 +59,16 @@ button.tick{border:0;border-radius:3px;background:transparent;min-height:0;heigh
 button.tick:not(:disabled){background:#fff;color:#125e52;min-width:43px}
 button.tick:disabled{opacity:1;cursor:default}
 @media(max-width:350px){.equipment button{font-size:.85rem}}
+
+.equipment button,.pasteur{touch-action:none;user-select:none;-webkit-user-select:none}
+button.pasteur{min-height:54px;width:44px;padding:0;background:transparent;border:0;cursor:grab}
+.pasteur:before{left:0}.pasteur span{left:5px}
+.drag-preview{position:fixed;z-index:999;pointer-events:none;transform:translate(-50%,-50%);background:white;padding:8px;border:1px solid var(--green);border-radius:8px;box-shadow:0 4px 14px #18323635}
+.drag-preview .equipment-icon{display:block}
+.pouring{position:absolute;z-index:4;top:10px;left:calc(50% - 53px);visibility:hidden;transform:rotate(73deg) scale(1.5)}
+.scene.pouring-oil .pouring{visibility:visible}
+.pouring:after{content:"";position:absolute;top:-16px;left:7px;width:4px;height:13px;background:#d5a650;border-radius:4px;transform:rotate(-35deg)}
+#slow[aria-pressed=true]{background:#e2f3ed;border-color:var(--green)}
 </style>
 </head>
 <body>
@@ -79,7 +89,8 @@ button.tick:disabled{opacity:1;cursor:default}
     </div>
     <div class="scene" id="scene" role="group" aria-label="Éprouvette graduée de 100 mL vide, à côté d’une règle.">
       <div class="tube" aria-hidden="true"><span>100 mL</span><div class="oil"></div></div>
-      <div class="pasteur" aria-hidden="true" hidden id="pipette"><span></span></div>
+      <button type="button" class="pasteur" hidden id="pipette" aria-label="Déposer la goutte avec la pipette Pasteur"><span></span></button>
+      <span class="equipment-icon bottle-icon pouring" aria-hidden="true"></span>
       <button type="button" id="pour-target" class="pour-target" hidden aria-label="Verser l’huile dans l’éprouvette"></button>
       <div class="scale" id="scale" role="group" aria-label="Graduations de la règle" hidden></div>
       <div class="axis" aria-hidden="true">
@@ -99,6 +110,8 @@ button.tick:disabled{opacity:1;cursor:default}
       <button type="button" id="release" class="primary">Déposer la goutte avec la pipette</button>
       <button type="button" id="timer" disabled>Démarrer le chrono</button>
       <button type="button" id="retry" disabled>Refaire l’essai</button>
+      <button type="button" id="change-marks" disabled>Changer les repères</button>
+      <button type="button" id="slow" aria-pressed="false">Ralenti ×0,25</button>
     </div>
     <p class="status" id="message" role="status">Prêt pour le premier essai.</p>
   </section>
@@ -121,7 +134,7 @@ button.tick:disabled{opacity:1;cursor:default}
         <thead><tr><th scope="col">Essai</th><th scope="col">d (m)</th><th scope="col">Δt (s)</th><th scope="col">v (m/s)</th></tr></thead>
         <tbody id="results"></tbody>
       </table>
-      <p id="comparison" hidden>Les vitesses sont-elles proches ? La taille des gouttes et le moment où tu touches le chronomètre peuvent-ils expliquer les écarts ?</p>
+      <p id="comparison" hidden>Pour une même goutte simulée, que deviennent la durée et la vitesse moyenne quand la distance augmente ? Le moment où tu touches le chronomètre peut-il expliquer les écarts ?</p>
       <details id="summary" hidden>
         <summary>Ce que la mesure permet de conclure</summary>
         <p>Tu as calculé une vitesse moyenne entre A et B dans le référentiel de l’éprouvette. Pour savoir si la vitesse est approximativement constante, mesure le temps mis par une même goutte pour parcourir deux intervalles successifs de même longueur.</p>
@@ -137,8 +150,11 @@ const get = id => document.getElementById(id);
 const release = get("release"), timer = get("timer"), retry = get("retry");
 const clock = get("clock"), message = get("message"), feedback = get("feedback");
 const distance = get("distance"), speed = get("speed"), check = get("check");
-const markerA = 4, markerB = 16, depth = 20, distanceM = (markerB - markerA) / 100;
-const velocities = [3.2, 3.4, 3.1];
+const depth = 20, modelSpeed = 3.2, trialCount = 3;
+let markerA = null, markerB = null;
+let playbackRate = 1;
+const slow = get("slow"), changeMarks = get("change-marks"), pipette = get("pipette");
+const scene = get("scene");
 const records = [];
 const prepare = get("prepare"), prepDescription = get("prep-description");
 const preparation = [
@@ -159,6 +175,8 @@ function drawPreparation() {
   get("scene").classList.toggle("has-oil", prepStep > 0);
   get("mark-a").hidden = prepStep < 2;
   get("mark-b").hidden = prepStep < 3;
+  if (markerA !== null) get("mark-a").style.top = markerA / depth * 100 + "%";
+  if (markerB !== null) get("mark-b").style.top = markerB / depth * 100 + "%";
   get("pipette").hidden = !pipetteLoaded;
   const marking = prepStep === 1 || prepStep === 2;
   oilBottle.disabled = prepStep !== 0;
@@ -170,43 +188,50 @@ function drawPreparation() {
   pourTarget.hidden = selectedTool !== "oil";
   scale.hidden = !rulerVisible;
   for (const tick of ticks) tick.disabled = !marking || selectedTool !== "marker";
-  prepare.hidden = prepStep !== 3 || pipetteLoaded || records.length >= velocities.length || attempt !== "ready";
-  const [label, instructions] = preparation[prepStep];
+  prepare.hidden = prepStep !== 3 || pipetteLoaded || records.length >= trialCount || attempt !== "ready";
+  const [label, instructions] = preparation[3];
   prepare.textContent = label;
   const instruction = placementFeedback || (prepStep === 0
-    ? selectedTool === "oil" ? "Touche l’éprouvette pour y verser l’huile." : "Sélectionne la bouteille d’huile."
+    ? selectedTool === "oil" ? "Touche l’éprouvette pour y verser l’huile." : "Glisse la bouteille sur l’éprouvette, ou sélectionne-la."
     : marking
-      ? !rulerVisible ? "Sélectionne la règle pour la placer à côté de l’éprouvette."
-        : selectedTool !== "marker" ? "Sélectionne le marqueur."
-          : prepStep === 1 ? "Touche la graduation 4 cm pour tracer le repère A."
-            : "Touche la graduation 16 cm pour tracer le repère B."
+      ? !rulerVisible ? "Glisse la règle à gauche de l’éprouvette, ou touche-la pour la placer."
+        : selectedTool !== "marker" ? "Glisse le marqueur sur une graduation, ou sélectionne-le."
+          : prepStep === 1 ? "Choisis une graduation entre 2 et 12 cm pour le repère A."
+            : "Place B au moins 6 cm plus bas que A, sans dépasser 18 cm."
       : instructions);
-  prepDescription.textContent = records.length >= velocities.length
+  prepDescription.textContent = records.length >= trialCount
     ? "Les trois essais sont terminés."
     : pipetteLoaded
-      ? "La pipette est chargée. Dépose une seule goutte à la surface de l’huile, au centre de l’éprouvette."
+      ? "Glisse la pipette vers le haut de l’éprouvette pour déposer une goutte, ou utilise le bouton."
       : attempt === "ready"
         ? instruction
         : "L’éprouvette contient l’huile et les deux repères sont en place.";
   const sceneState = prepStep === 0 ? "vide" : "contenant de l’huile";
-  const marks = prepStep < 2 ? "" : prepStep === 2 ? " Repère A à 4 cm." : " Repères A à 4 cm et B à 16 cm.";
-  get("scene").setAttribute("aria-label", "Éprouvette graduée de 100 mL " + sceneState + ", à côté d’une règle." + marks);
+  const marks = prepStep < 2 ? "" : prepStep === 2 ? " Repère A à " + markerA + " cm." : " Repères A à " + markerA + " cm et B à " + markerB + " cm.";
+  get("scene").setAttribute("aria-label", "Éprouvette graduée de 100 mL " + sceneState + (rulerVisible ? ", à côté d’une règle." : ".") + marks);
 }
 oilBottle.addEventListener("click", () => {
   selectedTool = "oil";
   drawControls();
 });
-pourTarget.addEventListener("click", () => {
+let pourAnimation;
+function pourOil() {
+  if (prepStep !== 0) return;
+  scene.classList.add("pouring-oil");
+  pourAnimation = setTimeout(() => scene.classList.remove("pouring-oil"), 600);
   selectedTool = null;
   prepStep = 1;
   drawControls();
   ruler.focus();
-});
-ruler.addEventListener("click", () => {
+}
+pourTarget.addEventListener("click", pourOil);
+function placeRuler() {
+  if (prepStep === 0) return;
   rulerVisible = true;
   drawControls();
   if (prepStep < 3) marker.focus();
-});
+}
+ruler.addEventListener("click", placeRuler);
 marker.addEventListener("click", () => {
   selectedTool = "marker";
   placementFeedback = "";
@@ -218,11 +243,17 @@ prepare.addEventListener("click", () => {
 });
 function markAt(cm) {
   if (selectedTool !== "marker" || (prepStep !== 1 && prepStep !== 2)) return;
-  const expected = prepStep === 1 ? markerA : markerB;
-  placementFeedback = cm === expected ? "" : "Ce n’est pas la bonne graduation. Cherche " + expected + " cm.";
-  if (!placementFeedback) {
+  const valid = prepStep === 1 ? cm >= 2 && cm <= 12 : cm >= markerA + 6 && cm <= 18;
+  placementFeedback = valid ? "" : prepStep === 1
+    ? "Choisis A entre 2 et 12 cm."
+    : "Choisis B au moins 6 cm plus bas que A, jusqu’à 18 cm.";
+  if (valid) {
+    if (prepStep === 1) markerA = cm;
+    else {
+      markerB = cm;
+      selectedTool = null;
+    }
     prepStep++;
-    if (prepStep === 3) selectedTool = null;
   }
   drawControls();
   if (prepStep === 3) prepare.focus();
@@ -244,7 +275,7 @@ for (let cm = 0; cm <= depth; cm += 2) {
   get("scale").append(tick);
 }
 function position(now) {
-  return 0.4 + (now - launchedAt) / 1000 * velocities[records.length];
+  return 0.4 + (now - launchedAt) / 1000 * playbackRate * modelSpeed;
 }
 function drawDrop(cm) {
   get("drop").style.top = Math.min(cm / depth * 100, 98) + "%";
@@ -253,10 +284,13 @@ function drawTime(seconds) {
   clock.textContent = format(seconds, 2) + " s";
 }
 function drawControls() {
-  release.disabled = attempt !== "ready" || !pipetteLoaded || records.length >= velocities.length;
+  release.disabled = attempt !== "ready" || !pipetteLoaded || records.length >= trialCount;
   get("drop").hidden = attempt === "ready";
   drawPreparation();
   timer.disabled = attempt !== "falling";
+  slow.disabled = attempt !== "ready";
+  changeMarks.disabled = prepStep !== 3 || attempt !== "ready" || records.length >= trialCount;
+  slow.setAttribute("aria-pressed", String(playbackRate < 1));
   timer.textContent = startedAt === null ? "Démarrer le chrono" : "Arrêter le chrono";
   retry.disabled = attempt === "ready";
   speed.disabled = check.disabled = attempt !== "measured";
@@ -268,14 +302,14 @@ function resetAttempt() {
   drawDrop(0.4);
   drawTime(0);
   speed.value = "";
-  feedback.textContent = records.length === velocities.length ? "Les trois essais sont enregistrés." : "Chronomètre le passage de la goutte entre A et B.";
-  message.textContent = records.length === velocities.length ? "Les trois essais sont terminés." : prepStep < 3 ? "Prépare l’éprouvette et les repères." : "Prêt pour l’essai " + (records.length + 1) + ".";
+  feedback.textContent = records.length === trialCount ? "Les trois essais sont enregistrés." : "Chronomètre le passage de la goutte entre A et B.";
+  message.textContent = records.length === trialCount ? "Les trois essais sont terminés." : prepStep < 3 ? "Prépare l’éprouvette et les repères." : "Prêt pour l’essai " + (records.length + 1) + ".";
   drawControls();
 }
 function update(now) {
   const cm = position(now);
   drawDrop(cm);
-  if (startedAt !== null && measured === null) drawTime((now - startedAt) / 1000);
+  if (startedAt !== null && measured === null) drawTime((now - startedAt) / 1000 * playbackRate);
   if (cm < depth) {
     frame = requestAnimationFrame(update);
   } else if (attempt === "falling") {
@@ -284,13 +318,29 @@ function update(now) {
     drawControls();
   }
 }
-release.addEventListener("click", () => {
+function releaseDrop() {
+  if (release.disabled) return;
   launchedAt = performance.now();
   attempt = "falling";
   pipetteLoaded = false;
   message.textContent = "Observe le centre de la goutte. Démarre au repère A.";
   drawControls();
   frame = requestAnimationFrame(update);
+}
+release.addEventListener("click", releaseDrop);
+pipette.addEventListener("click", releaseDrop);
+slow.addEventListener("click", () => {
+  playbackRate = playbackRate === 1 ? 0.25 : 1;
+  drawControls();
+});
+changeMarks.addEventListener("click", () => {
+  markerA = markerB = null;
+  pipetteLoaded = false;
+  prepStep = 1;
+  selectedTool = "marker";
+  distance.value = "";
+  placementFeedback = "";
+  drawControls();
 });
 timer.addEventListener("click", () => {
   const now = performance.now(), cm = position(now);
@@ -299,7 +349,7 @@ timer.addEventListener("click", () => {
     startPosition = cm;
     message.textContent = "Chrono en cours. Arrête-le au repère B.";
   } else {
-    measured = Math.round((now - startedAt) / 10) / 100;
+    measured = Math.round((now - startedAt) * playbackRate / 10) / 100;
     drawTime(measured);
     if (Math.abs(startPosition - markerA) > 1.5 || Math.abs(cm - markerB) > 1.5) {
       attempt = "missed";
@@ -316,6 +366,7 @@ retry.addEventListener("click", resetAttempt);
 get("calc").addEventListener("submit", event => {
   event.preventDefault();
   if (attempt !== "measured") return;
+  const distanceM = (markerB - markerA) / 100;
   if (Math.abs(read(distance) - distanceM) > 0.00001 || !Number.isFinite(read(distance))) {
     feedback.textContent = "Soustrais la position de A à celle de B, puis convertis les centimètres en mètres.";
     return;
@@ -325,28 +376,32 @@ get("calc").addEventListener("submit", event => {
     feedback.textContent = "Divise la distance en mètres par la durée affichée, puis arrondis à trois décimales.";
     return;
   }
-  records.push({seconds:measured,value:expected});
+  records.push({distance:distanceM,seconds:measured,value:expected});
   renderResults();
   resetAttempt();
   feedback.textContent = "Calcul correct. L’essai a été enregistré.";
 });
 function renderResults() {
-  get("results").replaceChildren(...velocities.map((_,index) => {
+  get("results").replaceChildren(...Array.from({length:trialCount}, (_,index) => {
     const record = records[index];
     const row = document.createElement("tr");
     const heading = document.createElement("th");
     heading.scope = "row";
     heading.textContent = index + 1;
     row.append(heading);
-    for (const value of record ? [format(distanceM,3), format(record.seconds,2), format(record.value,3)] : ["—","—","—"]) {
+    for (const value of record ? [format(record.distance,3), format(record.seconds,2), format(record.value,3)] : ["—","—","—"]) {
       row.insertCell().textContent = value;
     }
     return row;
   }));
-  get("comparison").hidden = get("summary").hidden = records.length < velocities.length;
+  get("comparison").hidden = get("summary").hidden = records.length < trialCount;
 }
 get("reset").addEventListener("click", () => {
   records.length = 0;
+  markerA = markerB = null;
+  playbackRate = 1;
+  clearTimeout(pourAnimation);
+  scene.classList.remove("pouring-oil");
   prepStep = 0;
   pipetteLoaded = false;
   selectedTool = null;
@@ -357,6 +412,68 @@ get("reset").addEventListener("click", () => {
   renderResults();
   resetAttempt();
 });
+
+function enableDrag(button, drop) {
+  let origin = null;
+  let preview = null;
+  let ignoreClick = false;
+  button.addEventListener("pointerdown", event => {
+    if (!event.isPrimary || event.button !== 0) return;
+    ignoreClick = false;
+    origin = {id:event.pointerId, x:event.clientX, y:event.clientY};
+    button.setPointerCapture(event.pointerId);
+  });
+  button.addEventListener("pointermove", event => {
+    if (origin?.id !== event.pointerId) return;
+    if (!preview && Math.hypot(event.clientX-origin.x,event.clientY-origin.y) < 8) return;
+    if (!preview) {
+      preview = document.createElement("span");
+      preview.className = "drag-preview";
+      preview.setAttribute("aria-hidden", "true");
+      const icon = button.querySelector(".equipment-icon");
+      if (icon) preview.append(icon.cloneNode(true));
+      else preview.textContent = "Pipette Pasteur";
+      document.body.append(preview);
+    }
+    preview.style.left = event.clientX + "px";
+    preview.style.top = event.clientY + "px";
+  });
+  function clear() {
+    preview?.remove();
+    preview = origin = null;
+  }
+  button.addEventListener("pointercancel", clear);
+  button.addEventListener("lostpointercapture", clear);
+  button.addEventListener("pointerup", event => {
+    if (origin?.id !== event.pointerId) return;
+    const dragged = Boolean(preview);
+    clear();
+    if (!dragged) return;
+    ignoreClick = true;
+    drop(event.clientX, event.clientY);
+  });
+  button.addEventListener("click", event => {
+    if (!ignoreClick || !event.detail) return;
+    ignoreClick = false;
+    event.stopImmediatePropagation();
+  }, true);
+}
+function inVessel(x, y) {
+  const box = scene.querySelector(".tube").getBoundingClientRect();
+  return x >= box.left - 18 && x <= box.right + 18 && y >= box.top - 20 && y <= box.bottom;
+}
+enableDrag(oilBottle, (x,y) => {if (inVessel(x,y)) pourOil();});
+enableDrag(ruler, (x,y) => {
+  const box = scene.getBoundingClientRect();
+  if (x >= box.left && x <= box.left + box.width / 2 && y >= box.top && y <= box.bottom) placeRuler();
+});
+enableDrag(marker, (x,y) => {
+  const box = scale.getBoundingClientRect();
+  if (x < box.left - 18 || x > box.right + 18 || y < box.top - 8 || y > box.bottom + 8) return;
+  selectedTool = "marker";
+  markAt(Math.round((y - box.top) / box.height * depth / 2) * 2);
+});
+enableDrag(pipette, (x,y) => {if (inVessel(x,y)) releaseDrop();});
 renderResults();
 resetAttempt();
 </script>
