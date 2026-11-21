@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Le bus et le référentiel | Laboratoire virtuel</title>
+<style>
+  :root{
+    --ink:#16302c; --muted:#4f6b66; --teal:#1f6f66; --teal-d:#14564e;
+    --bg:#eef3f2; --card:#fff; --line:#d3e2df; --soft:#e8f2f0;
+    --ok:#1d7f54; --bad:#b4400f;
+    --cA:#2563c9; --cB:#d0457a; --cC:#d97706; --cBus:#2f9e44; --cRoad:#55606a;
+  }
+  *{box-sizing:border-box}
+  [hidden]{display:none!important}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.45}
+  header,main{max-width:1100px;margin:0 auto;padding:0 18px}
+  header{padding-top:16px}
+  .kicker{margin:0;color:var(--teal);font-weight:700;font-size:.85rem}
+  h1{margin:.05em 0 .1em;font-size:clamp(1.8rem,4vw,2.6rem);letter-spacing:-.03em;line-height:1.05}
+  .lead{margin:0 0 12px;color:var(--muted);max-width:75ch}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px 18px;margin-bottom:16px}
+  h2{font-size:1.12rem;margin:0 0 8px}
+  canvas{display:block;width:100%;aspect-ratio:900/380;border-radius:12px;background:#dff0f6}
+  .bar{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;margin-top:12px}
+  .group{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:12px;padding:3px;gap:2px;background:#fff;flex-wrap:wrap}
+  .group .lbl{font-size:.85rem;font-weight:650;color:var(--muted);padding:0 .5em 0 .4em}
+  .seg{font:inherit;font-size:.9rem;font-weight:650;border:0;background:transparent;color:var(--ink);border-radius:9px;padding:.5em .7em;cursor:pointer;transition:background .18s,color .18s;display:inline-flex;align-items:center;gap:.4em}
+  .seg:hover{background:var(--soft)}
+  .seg[aria-pressed="true"]{background:var(--teal);color:#fff}
+  .seg:focus-visible,.btn:focus-visible{outline:3px solid #8fd3c7;outline-offset:1px}
+  .dot{width:.7em;height:.7em;border-radius:50%;display:inline-block;flex:none}
+  .btn{font:inherit;font-weight:650;font-size:.92rem;border-radius:12px;border:1px solid var(--line);background:#fff;color:var(--ink);padding:.55em .9em;cursor:pointer;transition:background .18s,border-color .18s}
+  .btn:hover{border-color:var(--teal);background:var(--soft)}
+  .btn.primary{background:var(--teal);border-color:var(--teal);color:#fff}
+  .btn.primary:hover{background:var(--teal-d)}
+  .switch{display:inline-flex;align-items:center;gap:.45em;font-size:.92rem;font-weight:600;cursor:pointer;user-select:none}
+  .switch input{width:1.1em;height:1.1em;accent-color:var(--teal)}
+  .frame-info{margin-top:12px;padding:10px 12px;border-radius:10px;background:var(--soft);font-size:.95rem}
+  .frame-info b{color:var(--teal-d)}
+  .live{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+  .pill{font-size:.85rem;font-weight:650;border-radius:999px;padding:.2em .7em;background:#fff;border:1px solid var(--line);display:inline-flex;align-items:center;gap:.4em}
+  .pill.mv{border-color:#f0b48f;background:#fff4ec;color:#9a3a0a}
+  .pill.st{color:var(--muted)}
+
+  .grid2{display:grid;grid-template-columns:1.2fr 1fr;gap:16px;align-items:start}
+  table{width:100%;border-collapse:separate;border-spacing:0;border:1.5px solid #9fb9d6;border-radius:12px;overflow:hidden}
+  th,td{border-right:1px solid #c5d6e8;border-bottom:1px solid #c5d6e8;padding:8px;text-align:center}
+  th:last-child,td:last-child{border-right:0}
+  tbody tr:last-child th,tbody tr:last-child td{border-bottom:0}
+  thead th{background:#cfe3f7;font-size:.95rem}
+  thead th.corner{text-align:center;font-size:.9rem;line-height:1.2}
+  tbody th{background:#fbf1d6;font-size:1.05rem}
+  tr.extra th{background:#f1e6f7}
+  .yn{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#fff}
+  .yn button{font:inherit;font-size:.85rem;font-weight:700;border:0;background:transparent;padding:.42em .6em;cursor:pointer;color:var(--ink)}
+  .yn button+button{border-left:1px solid var(--line)}
+  .yn button[aria-pressed="true"]{background:var(--ink);color:#fff}
+  td.good{background:#e6f4ec} td.wrong{background:#fbeee6}
+  td .mark{display:block;font-size:.78rem;font-weight:700;margin-top:3px;min-height:1em}
+  td.good .mark{color:var(--ok)} td.wrong .mark{color:var(--bad)}
+  .eye{font:inherit;font-size:.75rem;font-weight:650;border:0;background:transparent;color:var(--teal-d);cursor:pointer;text-decoration:underline;padding:2px 0 0;display:block;margin:0 auto}
+  .actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+  .score{margin-top:10px;font-weight:700}
+  .expl{margin:10px 0 0;padding-left:1.1em}
+  .expl li{margin:.35em 0}
+  .msg{padding:10px 12px;border-radius:10px;border-left:4px solid var(--teal);background:var(--soft);font-size:.95rem;margin-top:10px}
+  details summary{cursor:pointer;font-weight:700;color:var(--teal-d)}
+  @media (max-width:860px){.grid2{grid-template-columns:1fr}}
+  @media (max-width:520px){th,td{padding:5px 3px}.yn button{padding:.4em .45em}}
+</style>
+</head>
+<body>
+<header>
+  <p class="kicker">Physique-chimie · Mouvement et référentiel · Laboratoire virtuel</p>
+  <h1>Le bus, Alain, Brigitte et Claude</h1>
+  <p class="lead">Un bus roule lentement. <b style="color:var(--cA)">Alain (A)</b> est assis dans le bus. <b style="color:var(--cB)">Brigitte (B)</b> marche dans l’allée vers l’arrière pour rester à la hauteur de <b style="color:var(--cC)">Claude (C)</b>, qui est au bord de la route. Choisis <b>depuis qui</b> tu observes la scène : la caméra suit alors cet objet de référence.</p>
+</header>
+
+<main>
+  <section class="card" aria-labelledby="simTitle">
+    <h2 id="simTitle">Observer la scène</h2>
+    <canvas id="cv" width="900" height="380" aria-label="Animation : le bus roule vers la droite, Brigitte marche vers l’arrière du bus, Claude est au bord de la route."></canvas>
+
+    <div class="bar">
+      <div class="group" role="group" aria-label="Référentiel">
+        <span class="lbl">🎥 J’observe depuis</span>
+        <button class="seg" data-ref="road" aria-pressed="true"><span class="dot" style="background:var(--cRoad)"></span>la route</button>
+        <button class="seg" data-ref="C" aria-pressed="false"><span class="dot" style="background:var(--cC)"></span>Claude</button>
+        <button class="seg" data-ref="bus" aria-pressed="false"><span class="dot" style="background:var(--cBus)"></span>le bus</button>
+        <button class="seg" data-ref="A" aria-pressed="false"><span class="dot" style="background:var(--cA)"></span>Alain</button>
+        <button class="seg" data-ref="B" aria-pressed="false"><span class="dot" style="background:var(--cB)"></span>Brigitte</button>
+      </div>
+    </div>
+    <div class="bar">
+      <button class="btn" id="playBtn" type="button">⏸ Pause</button>
+      <button class="btn" id="restartBtn" type="button">↺ Recommencer</button>
+      <div class="group" role="group" aria-label="Vitesse de l’animation">
+        <span class="lbl">Vitesse</span>
+        <button class="seg spd" data-rate="0.5" aria-pressed="false">×0,5</button>
+        <button class="seg spd" data-rate="1" aria-pressed="true">Normal</button>
+      </div>
+      <label class="switch"><input type="checkbox" id="trails" checked> Traces (positions successives)</label>
+      <label class="switch"><input type="checkbox" id="hints"> Indiquer qui bouge</label>
+    </div>
+    <div class="frame-info" id="frameInfo" aria-live="polite"></div>
+  </section>
+
+  <div class="grid2">
+    <section class="card" aria-labelledby="exTitle">
+      <h2 id="exTitle">Exercice : complète par OUI ou NON</h2>
+      <table id="tab">
+        <thead>
+          <tr>
+            <th class="corner">Est en mouvement<br>par rapport à</th>
+            <th>C<button class="eye" data-ref="C" type="button">👁 observer depuis C</button></th>
+            <th>B<button class="eye" data-ref="B" type="button">👁 observer depuis B</button></th>
+            <th>La route<button class="eye" data-ref="road" type="button">👁 observer depuis la route</button></th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+      <div class="actions">
+        <button class="btn primary" id="checkBtn" type="button">Vérifier</button>
+        <button class="btn" id="clearBtn" type="button">Effacer</button>
+        <label class="switch"><input type="checkbox" id="extra"> Pour aller plus loin : la ligne « B »</label>
+      </div>
+      <div id="result" aria-live="polite"></div>
+    </section>
+
+    <section class="card" aria-labelledby="helpTitle">
+      <h2 id="helpTitle">Méthode</h2>
+      <p style="margin:.2em 0">Pour savoir si un objet est en mouvement <b>par rapport à</b> un autre&nbsp;:</p>
+      <ol style="margin:.4em 0;padding-left:1.2em">
+        <li>Choisis l’objet de référence avec « J’observe depuis ».</li>
+        <li>Regarde l’autre objet&nbsp;: <b>sa position change-t-elle</b> par rapport à la référence&nbsp;?</li>
+        <li>Si oui, il est <b>en mouvement</b>. Sinon, il est <b>immobile</b> dans ce référentiel.</li>
+      </ol>
+      <p style="margin:.6em 0 .2em">Avec les traces activées, un objet immobile laisse <b>un seul point</b>&nbsp;; un objet en mouvement laisse <b>une ligne de points</b>.</p>
+      <details style="margin-top:10px"><summary>Une remarque intéressante</summary>
+        <p style="margin:.5em 0 0">Observe depuis <b>Alain</b> puis depuis <b>le bus</b>&nbsp;: c’est la même chose, car Alain est immobile par rapport au bus. De même, observer depuis <b>Brigitte</b>, depuis <b>Claude</b> ou depuis <b>la route</b> donne la même scène&nbsp;: Brigitte, Claude et la route sont immobiles les uns par rapport aux autres.</p>
+      </details>
+    </section>
+  </div>
+</main>
+
+<script>
+(() => {
+  "use strict";
+  const $ = id => document.getElementById(id);
+  // anciens navigateurs : roundRect de secours
+  if (!CanvasRenderingContext2D.prototype.roundRect){
+    CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r){
+      r = Math.min(Array.isArray(r) ? r[0] : r, w / 2, h / 2);
+      this.moveTo(x + r, y); this.arcTo(x + w, y, x + w, y + h, r); this.arcTo(x + w, y + h, x, y + h, r);
+      this.arcTo(x, y + h, x, y, r); this.arcTo(x, y, x + w, y, r); this.closePath();
+    };
+  }
+  const cv = $("cv"), ctx = cv.getContext("2d");
+  const W = 900, H = 380;
+  const COL = {A:"#2563c9", B:"#d0457a", C:"#d97706", bus:"#2f9e44", road:"#55606a"};
+  const NAME = {road:"la route", C:"Claude (C)", bus:"le bus", A:"Alain (A)", B:"Brigitte (B)"};
+
+  // ---------- Modèle (coordonnées « monde », en pixels) ----------
+  const V = 50;                 // vitesse du bus par rapport à la route (px/s)
+  const BUS_L = 430;            // longueur du bus
+  const CX = 450;               // position de Claude sur le trottoir
+  const A_REL = 300;            // place d’Alain dans le bus (depuis l’arrière)
+  const B_REL0 = 385, B_REL1 = 45; // Brigitte : de l’avant vers l’arrière
+  const T_END = (B_REL0 - B_REL1) / V;
+  const XB0 = CX - B_REL0;      // arrière du bus à t = 0 (Brigitte en face de Claude)
+  const xBus = t => XB0 + V * t;
+  const pos = {
+    bus: t => xBus(t) + BUS_L / 2,
+    A:   t => xBus(t) + A_REL,
+    B:   t => xBus(t) + B_REL0 - V * t,   // = CX : reste en face de Claude
+    C:   () => CX,
+    road:() => CX
+  };
+  const vel = {bus:V, A:V, B:0, C:0, road:0};
+  // où placer la référence à l’écran
+  const SCREEN = {road:CX, C:CX, B:CX, bus:W/2, A:W/2 - BUS_L/2 + A_REL};
+
+  // ---------- État ----------
+  const st = {t:0, playing:true, rate:1, ref:"road", trails:true, hints:false, hold:0, samples:[]};
+  function restart(){ st.t = 0; st.hold = 0; st.samples = []; sample(); }
+  function sample(){ st.samples.push({t: st.t, bus: pos.bus(st.t), A: pos.A(st.t), B: pos.B(st.t), C: CX}); }
+
+  // caméra : x écran = x monde − camX
+  const camX = () => pos[st.ref](st.t) - SCREEN[st.ref];
+
+  // ---------- Dessin ----------
+  function rr(x, y, w, h, r){ ctx.beginPath(); ctx.roundRect(x, y, w, h, r); }
+  function badge(x, y, letter, color){
+    ctx.beginPath(); ctx.arc(x, y, 12, 0, 7); ctx.fillStyle = "#fff"; ctx.fill();
+    ctx.lineWidth = 2.5; ctx.strokeStyle = color; ctx.stroke();
+    ctx.fillStyle = "#16302c"; ctx.font = "800 14px Inter, system-ui, sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText(letter, x, y + .5);
+  }
+  function refRing(x, y, w, h){
+    ctx.save(); ctx.setLineDash([6, 5]); ctx.lineWidth = 2; ctx.strokeStyle = "#14564e";
+    rr(x, y, w, h, 12); ctx.stroke(); ctx.restore();
+  }
+  function hintTag(x, y, moving){
+    const txt = moving ? "en mouvement" : "immobile";
+    ctx.font = "700 11px Inter, system-ui, sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    const w = ctx.measureText(txt).width + 14;
+    rr(x - w/2, y - 9, w, 18, 9); ctx.fillStyle = moving ? "#fff1e6" : "#f1f5f4"; ctx.fill();
+    ctx.strokeStyle = moving ? "#f0a070" : "#b9cbc7"; ctx.lineWidth = 1; ctx.stroke();
+    ctx.fillStyle = moving ? "#9a3a0a" : "#4f6b66"; ctx.fillText(txt, x, y + .5);
+  }
+
+  function drawBackground(cx){
+    // ciel
+    const g = ctx.createLinearGradient(0, 0, 0, 200); g.addColorStop(0, "#cfe9f6"); g.addColorStop(1, "#eef7f6");
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, 210);
+    // immeubles (liés à la route)
+    const period = 260;
+    const first = Math.floor((cx - 100) / period) - 1;
+    for (let i = first; i < first + 6; i++){
+      const wx = i * period, x = wx - cx;
+      const hh = 70 + ((i * 37) % 3 + 3) % 3 * 22;
+      ctx.fillStyle = ["#c9d8dc","#d6ccc2","#c7d3c3"][((i % 3) + 3) % 3];
+      ctx.fillRect(x + 20, 190 - hh, 110, hh);
+      ctx.fillStyle = "rgba(255,255,255,.55)";
+      for (let r = 0; r < hh / 26 - 1; r++) for (let c = 0; c < 4; c++) ctx.fillRect(x + 30 + c * 25, 200 - hh + r * 26, 12, 14);
+      // arbre
+      ctx.fillStyle = "#8a6a45"; ctx.fillRect(x + 178, 160, 7, 34);
+      ctx.fillStyle = "#7fb069"; ctx.beginPath(); ctx.arc(x + 181, 150, 22, 0, 7); ctx.fill();
+    }
+    // trottoir du fond
+    ctx.fillStyle = "#d9d3c7"; ctx.fillRect(0, 190, W, 22);
+    // lampadaires
+    for (let i = Math.floor((cx - 50) / 130) - 1; i < Math.floor((cx - 50) / 130) + 9; i++){
+      const x = i * 130 + 65 - cx;
+      ctx.fillStyle = "#6b7a80"; ctx.fillRect(x, 120, 4, 76);
+      ctx.fillRect(x - 10, 118, 18, 4);
+    }
+    // route
+    ctx.fillStyle = "#8d969c"; ctx.fillRect(0, 212, W, 98);
+    ctx.fillStyle = "#7b848a"; ctx.fillRect(0, 212, W, 6);
+    // pointillés
+    ctx.fillStyle = "#f4f4f0";
+    for (let i = Math.floor(cx / 60) - 1; i < Math.floor(cx / 60) + 17; i++) ctx.fillRect(i * 60 - cx, 298, 32, 5);
+    // trottoir de devant
+    ctx.fillStyle = "#cfc7b8"; ctx.fillRect(0, 310, W, 70);
+    ctx.fillStyle = "#bdb4a3"; ctx.fillRect(0, 310, W, 5);
+    for (let i = Math.floor(cx / 45) - 1; i < Math.floor(cx / 45) + 22; i++){ ctx.fillStyle = "rgba(0,0,0,.05)"; ctx.fillRect(i * 45 - cx, 315, 2, 65); }
+  }
+
+  function personUpper(x, color, phase, faceLeft){
+    // buste vu à travers la fenêtre (y : fenêtres 150–205)
+    const bob = Math.sin(phase * 2) * 1.5;
+    ctx.fillStyle = color; rr(x - 13, 178 + bob, 26, 34, 8); ctx.fill();
+    ctx.fillStyle = "#f2c9a0"; ctx.beginPath(); ctx.arc(x, 166 + bob, 10, 0, 7); ctx.fill();
+    ctx.fillStyle = "#4a2f1d"; ctx.beginPath(); ctx.arc(x + (faceLeft ? 2 : -2), 162 + bob, 10, Math.PI, 2 * Math.PI); ctx.fill();
+  }
+
+  function drawBus(t, cx){
+    const x = xBus(t) - cx, y = 120;
+    // ombre
+    ctx.fillStyle = "rgba(0,0,0,.15)"; ctx.beginPath(); ctx.ellipse(x + BUS_L/2, 292, BUS_L/2, 8, 0, 0, 7); ctx.fill();
+    // carrosserie
+    ctx.fillStyle = "#3fbf4f"; rr(x, y, BUS_L, 160, 16); ctx.fill();
+    ctx.fillStyle = "#2f9e44"; rr(x, y, BUS_L, 14, [16,16,0,0]); ctx.fill();
+    ctx.fillStyle = "#f2d43d"; ctx.fillRect(x, 228, BUS_L, 12);
+    // fenêtres (fond)
+    ctx.save();
+    rr(x + 14, 148, BUS_L - 50, 60, 6); ctx.clip();
+    ctx.fillStyle = "#bfe3f2"; ctx.fillRect(x, 140, BUS_L, 80);
+    // passagers
+    const phase = t * 6;
+    personUpper(x + A_REL, COL.A, 0, false);
+    personUpper(x + B_REL0 - V * t, COL.B, phase, true);
+    ctx.restore();
+    // montants des fenêtres
+    ctx.fillStyle = "#2f9e44";
+    for (const px of [14, 92, 170, 248, 326, BUS_L - 36]) ctx.fillRect(x + px - 4, 146, 8, 64);
+    ctx.fillRect(x + 10, 146, BUS_L - 42, 4); ctx.fillRect(x + 10, 206, BUS_L - 42, 4);
+    // portes
+    ctx.strokeStyle = "#1f7a33"; ctx.lineWidth = 2;
+    for (const dx of [120, 340]){ ctx.strokeRect(x + dx, 150, 40, 120); ctx.beginPath(); ctx.moveTo(x + dx + 20, 150); ctx.lineTo(x + dx + 20, 270); ctx.stroke(); }
+    // pare-brise et phare
+    ctx.fillStyle = "#bfe3f2"; rr(x + BUS_L - 30, 148, 24, 70, [4,10,4,4]); ctx.fill();
+    ctx.fillStyle = "#fff6c8"; rr(x + BUS_L - 12, 246, 10, 12, 3); ctx.fill();
+    ctx.fillStyle = "#e5484d"; rr(x + 2, 246, 8, 12, 3); ctx.fill();
+    // roues
+    for (const wx of [95, 335]){
+      const cxw = x + wx, cyw = 278, r = 24;
+      ctx.fillStyle = "#26292c"; ctx.beginPath(); ctx.arc(cxw, cyw, r, 0, 7); ctx.fill();
+      ctx.fillStyle = "#c9cfd3"; ctx.beginPath(); ctx.arc(cxw, cyw, 11, 0, 7); ctx.fill();
+      const a = xBus(t) / r;
+      ctx.strokeStyle = "#7d868c"; ctx.lineWidth = 2.5;
+      for (let k = 0; k < 3; k++){ const an = a + k * 2.094; ctx.beginPath(); ctx.moveTo(cxw, cyw); ctx.lineTo(cxw + Math.cos(an) * 11, cyw + Math.sin(an) * 11); ctx.stroke(); }
+    }
+    // badges
+    badge(x + A_REL, 136, "A", COL.A);
+    badge(x + B_REL0 - V * t, 136, "B", COL.B);
+  }
+
+  function drawClaude(cx, t){
+    const x = CX - cx, base = 372;
+    ctx.fillStyle = "#2c3e66"; ctx.fillRect(x - 9, base - 44, 7, 44); ctx.fillRect(x + 2, base - 44, 7, 44);
+    ctx.fillStyle = "#3b5ba5"; rr(x - 14, base - 86, 28, 46, 8); ctx.fill();
+    ctx.fillStyle = "#f2c9a0"; ctx.beginPath(); ctx.arc(x, base - 98, 12, 0, 7); ctx.fill();
+    ctx.fillStyle = "#5a3a22"; ctx.beginPath(); ctx.arc(x, base - 103, 12, Math.PI, 2 * Math.PI); ctx.fill();
+    // bras qui fait signe
+    const a = -1.9 + Math.sin(t * 7) * .35;
+    ctx.strokeStyle = "#3b5ba5"; ctx.lineWidth = 7; ctx.lineCap = "round";
+    ctx.beginPath(); ctx.moveTo(x + 10, base - 80); ctx.lineTo(x + 10 + Math.cos(a) * 30, base - 80 + Math.sin(a) * 30); ctx.stroke();
+    ctx.fillStyle = "#f2c9a0"; ctx.beginPath(); ctx.arc(x + 10 + Math.cos(a) * 33, base - 80 + Math.sin(a) * 33, 5, 0, 7); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(x - 10, base - 80); ctx.lineTo(x - 18, base - 50); ctx.stroke();
+    badge(x - 34, base - 104, "C", COL.C);
+  }
+
+  function drawTrails(){
+    if (!st.trails) return;
+    const ref = st.ref, off = SCREEN[ref];
+    const refAt = s => ref === "road" ? CX : ref === "C" ? CX : s[ref];
+    const rows = [["bus", 108], ["A", 222], ["B", 216], ["C", 376]];
+    for (const [k, y] of rows){
+      ctx.fillStyle = COL[k];
+      let lastX = null;
+      for (let i = 0; i < st.samples.length; i += 1){
+        const s = st.samples[i];
+        const x = s[k] - refAt(s) + off;
+        if (lastX !== null && Math.abs(x - lastX) < 3 && i !== st.samples.length - 1) continue;
+        ctx.globalAlpha = .85; ctx.beginPath(); ctx.arc(x, y, k === "bus" ? 4 : 3.5, 0, 7); ctx.fill();
+        lastX = x;
+      }
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  function draw(){
+    const cx = camX(), t = st.t;
+    ctx.clearRect(0, 0, W, H);
+    drawBackground(cx);
+    drawBus(t, cx);
+    drawClaude(cx, t);
+    drawTrails();
+    // anneau de référence
+    const xr = pos[st.ref](t) - cx;
+    if (st.ref === "bus") refRing(xr - BUS_L/2 - 8, 110, BUS_L + 16, 200);
+    else if (st.ref === "A" || st.ref === "B") refRing(xr - 22, 120, 44, 96);
+    else if (st.ref === "C") refRing(xr - 46, 252, 84, 126);
+    // bandeau
+    ctx.font = "700 13px Inter, system-ui, sans-serif"; ctx.textAlign = "left"; ctx.textBaseline = "middle";
+    const txt = "🎥 Référentiel : " + NAME[st.ref];
+    const w = ctx.measureText(txt).width + 20;
+    rr(10, 10, w, 26, 8); ctx.fillStyle = "rgba(20,86,78,.92)"; ctx.fill();
+    ctx.fillStyle = "#fff"; ctx.fillText(txt, 20, 23.5);
+    // indications
+    if (st.hints){
+      const mv = k => vel[k] !== vel[st.ref];
+      hintTag(pos.A(t) - cx, 88, mv("A"));
+      hintTag(pos.B(t) - cx, 66, mv("B"));
+      hintTag(CX - cx, 244, mv("C"));
+      hintTag(xBus(t) - cx + 215, 300, mv("bus"));
+      hintTag(840, 356, mv("road"));
+      ctx.font = "700 11px Inter, system-ui, sans-serif"; ctx.fillStyle = "#4f6b66"; ctx.textAlign = "right"; ctx.fillText("route :", 784, 356.5);
+    }
+    if (st.hold > 0){
+      ctx.font = "700 13px Inter, system-ui, sans-serif"; ctx.textAlign = "center";
+      const m = "Brigitte est arrivée au fond du bus — on recommence…", mw = ctx.measureText(m).width + 24;
+      rr(W/2 - mw/2, 48, mw, 28, 8); ctx.fillStyle = "rgba(255,255,255,.92)"; ctx.fill();
+      ctx.fillStyle = "#16302c"; ctx.fillText(m, W/2, 62.5);
+    }
+  }
+
+  // ---------- Boucle ----------
+  let last = performance.now(), acc = 0;
+  function loop(now){
+    const dt = Math.min(.05, (now - last) / 1000); last = now;
+    if (st.playing){
+      if (st.hold > 0){ st.hold -= dt; if (st.hold <= 0) restart(); }
+      else {
+        st.t += dt * st.rate; acc += dt * st.rate;
+        if (acc >= .25){ acc = 0; sample(); }
+        if (st.t >= T_END){ st.t = T_END; sample(); st.hold = 1.6; }
+      }
+    }
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  // ---------- Panneau d’information ----------
+  function info(){
+    const r = st.ref, items = [["A","Alain (A)"],["B","Brigitte (B)"],["C","Claude (C)"],["bus","le bus"],["road","la route"]].filter(([k]) => k !== r);
+    let html = `Tu observes depuis <b>${NAME[r]}</b> : la référence reste à la même place sur l’écran.`;
+    if (st.hints){
+      html += `<div class="live">` + items.map(([k, n]) => {
+        const mv = vel[k] !== vel[r];
+        return `<span class="pill ${mv ? "mv" : "st"}"><span class="dot" style="background:${COL[k]}"></span>${n} : ${mv ? "en mouvement" : "immobile"}</span>`;
+      }).join("") + `</div>`;
+    } else html += ` Quels objets changent de position ? Coche « Indiquer qui bouge » pour vérifier.`;
+    $("frameInfo").innerHTML = html;
+  }
+
+  // ---------- Commandes ----------
+  function setRef(r){
+    st.ref = r;
+    document.querySelectorAll(".seg[data-ref]").forEach(b => b.setAttribute("aria-pressed", b.dataset.ref === r));
+    info();
+  }
+  document.querySelectorAll(".seg[data-ref]").forEach(b => b.addEventListener("click", () => setRef(b.dataset.ref)));
+  document.querySelectorAll(".eye").forEach(b => b.addEventListener("click", () => { setRef(b.dataset.ref); $("cv").scrollIntoView({behavior:"smooth", block:"center"}); }));
+  document.querySelectorAll(".spd").forEach(b => b.addEventListener("click", () => {
+    st.rate = +b.dataset.rate;
+    document.querySelectorAll(".spd").forEach(x => x.setAttribute("aria-pressed", x === b));
+  }));
+  $("playBtn").addEventListener("click", () => { st.playing = !st.playing; $("playBtn").textContent = st.playing ? "⏸ Pause" : "▶ Lecture"; });
+  $("restartBtn").addEventListener("click", restart);
+  $("trails").addEventListener("change", e => { st.trails = e.target.checked; });
+  $("hints").addEventListener("change", e => { st.hints = e.target.checked; info(); });
+
+  // ---------- Exercice ----------
+  // vrai = en mouvement. Ligne = objet étudié, colonne = référence.
+  const ROWS = [
+    {k:"A", label:"A", cells:{C:true, B:true, road:true}},
+    {k:"bus", label:"Le Bus", cells:{C:true, B:true, road:true}},
+    {k:"B", label:"B", extra:true, cells:{C:false, B:null, road:false}}
+  ];
+  const COLS = ["C", "B", "road"];
+  const EXPL = {
+    "A|C": "A est assis dans le bus, qui avance : la distance entre A et Claude change → <b>OUI</b>.",
+    "A|B": "Brigitte reste en face de Claude (elle ne bouge pas par rapport à la route) alors qu’Alain avance avec le bus : la distance entre A et B change → <b>OUI</b>. Observe depuis Brigitte : Alain se déplace.",
+    "A|road": "A avance avec le bus par rapport à la route → <b>OUI</b>.",
+    "bus|C": "Le bus roule devant Claude, immobile au bord de la route → <b>OUI</b>.",
+    "bus|B": "Brigitte marche dans l’allée : sa position dans le bus change, donc le bus est en mouvement par rapport à elle → <b>OUI</b>.",
+    "bus|road": "Le bus roule sur la route → <b>OUI</b>.",
+    "B|C": "Brigitte marche vers l’arrière exactement à la vitesse à laquelle le bus avance : elle reste en face de Claude → <b>NON</b>.",
+    "B|road": "Pour la même raison, Brigitte reste au même endroit par rapport à la route → <b>NON</b> (même si elle marche !)."
+  };
+  const answers = {};
+  function buildTable(){
+    const showExtra = $("extra").checked;
+    $("tbody").innerHTML = ROWS.filter(r => !r.extra || showExtra).map(r =>
+      `<tr class="${r.extra ? "extra" : ""}"><th scope="row">${r.label}</th>` + COLS.map(c => {
+        if (r.cells[c] === null) return `<td style="background:#f3f3f3;color:#999">—</td>`;
+        const id = r.k + "|" + c, a = answers[id];
+        return `<td data-id="${id}"><span class="yn" role="group" aria-label="${r.label} par rapport à ${c === "road" ? "la route" : c}">
+          <button type="button" data-v="1" aria-pressed="${a === true}">OUI</button><button type="button" data-v="0" aria-pressed="${a === false}">NON</button></span><span class="mark"></span></td>`;
+      }).join("") + `</tr>`).join("");
+    $("tbody").querySelectorAll(".yn button").forEach(b => b.addEventListener("click", () => {
+      const td = b.closest("td"); answers[td.dataset.id] = b.dataset.v === "1";
+      td.className = ""; td.querySelector(".mark").textContent = "";
+      td.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x === b));
+    }));
+    $("result").innerHTML = "";
+  }
+  function checkAnswers(){
+    const showExtra = $("extra").checked;
+    let good = 0, total = 0, missing = 0;
+    const list = [];
+    for (const r of ROWS){
+      if (r.extra && !showExtra) continue;
+      for (const c of COLS){
+        if (r.cells[c] === null) continue;
+        const id = r.k + "|" + c, td = $("tbody").querySelector(`td[data-id="${id}"]`);
+        total++;
+        if (answers[id] === undefined){ missing++; td.className = ""; td.querySelector(".mark").textContent = ""; continue; }
+        const ok = answers[id] === r.cells[c];
+        if (ok) good++;
+        td.className = ok ? "good" : "wrong";
+        td.querySelector(".mark").textContent = ok ? "✓" : "✗";
+        if (!ok) list.push(`<li><b>${r.label} / ${c === "road" ? "la route" : c}</b> : ${EXPL[id]}</li>`);
+      }
+    }
+    let html = "";
+    if (missing) html += `<div class="msg">Il reste ${missing} case${missing > 1 ? "s" : ""} à compléter.</div>`;
+    html += `<div class="score">${good} / ${total - missing} réponse${good > 1 ? "s" : ""} juste${good > 1 ? "s" : ""}${missing ? " (sur les cases remplies)" : ""}.</div>`;
+    if (list.length) html += `<ul class="expl">${list.join("")}</ul><p class="kbd" style="margin:.4em 0 0;font-size:.88rem;color:var(--muted)">Astuce : clique sur « 👁 observer depuis… » en haut d’une colonne pour vérifier dans la simulation.</p>`;
+    else if (!missing) html += `<div class="msg" style="border-color:var(--ok);background:#e6f4ec">Bravo ! ${showExtra ? "" : "Le piège : Brigitte marche, mais elle reste immobile par rapport à la route. Alain et le bus, eux, bougent par rapport à elle. Essaie la ligne « B » pour aller plus loin."}</div>`;
+    $("result").innerHTML = html;
+  }
+  $("checkBtn").addEventListener("click", checkAnswers);
+  $("clearBtn").addEventListener("click", () => { for (const k in answers) delete answers[k]; buildTable(); });
+  $("extra").addEventListener("change", buildTable);
+
+  // ---------- Canvas net sur écran haute définition ----------
+  function fitCanvas(){
+    const dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+    cv.width = W * dpr; cv.height = H * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  fitCanvas(); addEventListener("resize", fitCanvas);
+
+  buildTable(); setRef("road"); restart();
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
