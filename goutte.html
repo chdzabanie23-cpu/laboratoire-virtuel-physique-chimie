@@ -1,496 +1,888 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Une goutte dans l’huile | Laboratoire virtuel</title>
 <style>
-:root{font:16px system-ui,sans-serif;background:#eff4f3;color:#183236;--green:#12645a;--line:#c9d9d6}
-*{box-sizing:border-box}body{margin:0}main{width:min(1080px,100% - 32px);margin:auto;padding:26px 0 40px}
-header{margin-bottom:24px}header p{max-width:61ch;margin:8px 0}h1{font-size:clamp(2.25rem,7vw,4.2rem);line-height:1;letter-spacing:-.05em;margin:9px 0}
-.level{font-size:.9rem;font-weight:700;color:var(--green)}
-.workspace{display:grid;grid-template-columns:minmax(280px,.9fr) minmax(320px,1.1fr);gap:16px;align-items:start}
-.card{border:1px solid var(--line);border-radius:16px;padding:18px;background:white;margin-bottom:16px}
-h2{font-size:1.18rem;margin:0 0 .6rem}p{line-height:1.45}button,input{font:inherit}button{padding:9px 12px;border:1px solid #a3bdb7;border-radius:8px;min-height:44px;background:white;color:#183236;font-weight:650;cursor:pointer}
-button.primary{background:var(--green);border-color:var(--green);color:white}button:disabled{opacity:.5;cursor:default}
-:focus-visible{outline:3px solid #ae5921;outline-offset:3px}
-.actions{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
-.scene{height:330px;position:relative;overflow:hidden;border-radius:12px;background:linear-gradient(140deg,#edf5f4,#e2f0ee);isolation:isolate}
-.scale{position:absolute;inset:32px auto 32px 0;left:calc(50% - 80px);width:45px;border-right:1px solid #77918f}
-.tick{position:absolute;right:0;transform:translateY(-50%);font-size:.72rem;line-height:1;color:#355955;display:flex;align-items:center;gap:5px}
-.tick:after{content:"";width:10px;border-top:1px solid currentColor}
-.tube{position:absolute;inset:26px auto 24px 50%;transform:translateX(-50%);width:65px;border:2px solid #739a9e;border-top:4px double #739a9e;border-radius:7px 7px 18px 18px;background:linear-gradient(90deg,#ffffff80,#ffffff22 25%,transparent 77%,#91b6ba42);box-shadow:inset 5px 0 8px #fff9,0 8px 13px #25484622}
-.tube:after{content:"";position:absolute;bottom:-4px;left:-14px;right:-14px;height:7px;border-radius:3px;background:#7b9c9b;z-index:-1}
-.axis{position:absolute;inset:32px 0}
-.drop{position:absolute;left:50%;width:14px;height:17px;transform:translate(-50%,-50%);border-radius:60% 60% 55% 55%;background:radial-gradient(circle at 35% 30%,#c49beb,#7429a4 58%,#441662);box-shadow:0 0 0 1px #502166;z-index:2}
-.mark{position:absolute;left:calc(50% - 32px);width:clamp(115px,42%,178px);border-top:2px dashed #2b635f;z-index:1}
-.mark span{position:absolute;right:0;top:0;transform:translateY(-50%);padding:3px 7px;border-radius:5px;background:#216962;color:white;font-weight:800}
-.measure{font-size:2rem;font-variant-numeric:tabular-nums;font-weight:750;display:block;margin:8px 0;color:var(--green)}
-.status{min-height:2.8em;color:#345954}
-label{display:block;font-weight:650;margin:10px 0 6px}label input{margin-top:5px}
-input{display:block;width:min(100%,180px);min-height:42px;padding:6px 9px;border:1px solid #829e98;border-radius:7px}
-table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
-th,td{text-align:left;padding:8px 4px;border-bottom:1px solid var(--line);font-size:.88rem}
-details{margin-top:14px}summary{cursor:pointer;font-weight:700;color:var(--green)}
-@media(max-width:680px){.workspace{grid-template-columns:1fr}.scene{height:280px}}
+  :root{
+    --ink:#16302c; --muted:#4f6b66; --teal:#1f6f66; --teal-d:#14564e;
+    --bg:#eef3f2; --card:#fff; --line:#d3e2df; --soft:#e8f2f0;
+    --ok:#1d7f54; --bad:#b4400f; --kmno4:#7b2d9b;
+  }
+  *{box-sizing:border-box}
+  [hidden]{display:none!important}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.45}
+  header{max-width:1180px;margin:0 auto;padding:16px 18px 2px}
+  .kicker{margin:0;color:var(--teal);font-weight:700;font-size:.85rem;letter-spacing:.02em}
+  h1{margin:.05em 0 .1em;font-size:clamp(1.8rem,4vw,2.6rem);letter-spacing:-.03em;line-height:1.05}
+  .lead{margin:0;color:var(--muted);max-width:62ch}
+  .layout{max-width:1180px;margin:0 auto;padding:12px 18px 40px;display:grid;
+    grid-template-columns:minmax(300px,520px) 1fr;gap:18px;align-items:start}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px 18px}
+  .bench{position:sticky;top:12px;padding:10px 12px 14px}
+  #scene{display:block;width:100%;height:auto;max-height:min(66vh, calc(100vh - 200px));margin:0 auto;
+    touch-action:none;user-select:none;-webkit-user-select:none}
+  .console{display:grid;grid-template-columns:auto 1fr;gap:8px 14px;align-items:center;border-top:1px solid var(--line);padding-top:12px;margin-top:4px}
+  .chrono{font-variant-numeric:tabular-nums;font-size:2.3rem;font-weight:800;color:var(--teal-d);letter-spacing:-.02em;min-width:5.2ch;transition:color .2s}
+  .chrono.running{color:#b4400f}
+  .console .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .btn{font:inherit;font-weight:650;font-size:.95rem;border-radius:12px;border:1px solid var(--line);background:#fff;color:var(--ink);
+    padding:.62em 1em;cursor:pointer;transition:background .18s,transform .08s,opacity .2s,border-color .18s}
+  .btn:hover:not(:disabled){border-color:var(--teal);background:var(--soft)}
+  .btn:active:not(:disabled){transform:scale(.97)}
+  .btn:disabled{opacity:.42;cursor:not-allowed}
+  .btn:focus-visible{outline:3px solid #8fd3c7;outline-offset:2px}
+  .btn.primary{background:var(--teal);border-color:var(--teal);color:#fff}
+  .btn.primary:hover:not(:disabled){background:var(--teal-d)}
+  .btn.go{min-width:9.5em;background:var(--ink);border-color:var(--ink);color:#fff}
+  .btn.go.stop{background:#b4400f;border-color:#b4400f}
+  .btn.toggle[aria-pressed="true"]{background:var(--soft);border-color:var(--teal);color:var(--teal-d)}
+  .kbd{font-size:.78rem;color:var(--muted)}
+  kbd{font:inherit;font-size:.78rem;border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:0 .35em;background:#fff}
 
-[hidden]{display:none!important}
-.tube span{position:absolute;z-index:1;left:5px;top:3px;font-size:.62rem;font-weight:750;color:#385f61}
-.oil{position:absolute;bottom:0;left:0;right:0;height:0;border-radius:0 0 15px 15px;background:linear-gradient(90deg,#f7dfae,#e8bb70);transition:height .45s ease}
-.scene.has-oil .oil{height:94%}
-.pasteur{position:absolute;top:2px;left:calc(50% + 40px);width:15px;height:70px;transform:rotate(41deg);z-index:2}
-.pasteur:before{content:"";position:absolute;width:17px;height:23px;border-radius:8px;background:#624484;border:1px solid #3d2856}
-.pasteur span{position:absolute;top:20px;left:5px;width:8px;height:47px;border:1px solid #715985;border-radius:2px 2px 5px 5px;background:linear-gradient(#ffffff 0 48%,#a96dca 48% 100%)}
-.prep{margin:12px 0;padding:12px;background:#eef6f3;border-radius:10px}
-.prep h3{font-size:1rem;margin:0}.prep p{margin:6px 0 10px}
-@media (prefers-reduced-motion:reduce){.oil{transition:none}}
+  .panel{display:flex;flex-direction:column;gap:16px}
+  .steps{list-style:none;margin:0 0 12px;padding:0;display:flex;gap:6px}
+  .steps li{flex:1;font-size:.8rem;font-weight:650;color:var(--muted);padding-top:9px;border-top:4px solid var(--line);transition:border-color .3s,color .3s}
+  .steps li.done{border-color:#8cc9bd;color:var(--teal)}
+  .steps li.current{border-color:var(--teal);color:var(--ink)}
+  h2{font-size:1.12rem;margin:0 0 6px}
+  .consigne p{margin:.25em 0}
+  .checklist{list-style:none;padding:0;margin:10px 0 2px;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:6px}
+  .checklist li{display:flex;align-items:center;gap:.5em;font-size:.92rem;padding:.4em .6em;border-radius:10px;background:#f6f9f8;color:var(--muted);transition:all .3s}
+  .checklist li::before{content:"";width:1.05em;height:1.05em;border-radius:50%;border:2px solid #b9cfca;flex:none;transition:all .3s}
+  .checklist li.done{background:var(--soft);color:var(--teal-d);font-weight:650}
+  .checklist li.done::before{background:var(--ok) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 8.5l2.5 2.5L12 5.5' stroke='white' stroke-width='2.2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") center/100% no-repeat;border-color:var(--ok)}
+  .checklist li.next{color:var(--ink);background:#fff;box-shadow:inset 0 0 0 1.5px var(--teal)}
+  .reading{margin-top:8px;font-size:.92rem;color:var(--muted)}
+  .reading b{color:var(--ink)}
+  .msg{margin-top:10px;padding:10px 12px;border-radius:10px;border-left:4px solid var(--teal);background:var(--soft);font-size:.95rem;animation:pop .35s ease}
+  .msg.ok{border-color:var(--ok);background:#e6f4ec}
+  .msg.bad{border-color:var(--bad);background:#fbeee6}
+  .msg.warn{border-color:#c48a0c;background:#fbf4e1}
+  @keyframes pop{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
 
-.equipment{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
-.equipment button{display:inline-flex;align-items:center;gap:7px;padding:6px 9px}
-.equipment button[aria-pressed=true]{background:#e2f3ed;border-color:var(--green);box-shadow:inset 0 0 0 1px var(--green)}
-.equipment-icon{display:inline-block;position:relative;width:20px;height:27px;flex:none}
-.bottle-icon{height:21px;margin-top:6px;border:1px solid #865c24;border-radius:6px 6px 4px 4px;background:linear-gradient(90deg,#fff2c1,#d4a049)}
-.bottle-icon:before{content:"";position:absolute;left:5px;right:5px;top:-6px;height:5px;background:#306454;border-radius:2px}
-.ruler-icon{width:13px;background:repeating-linear-gradient(#456f61 0 1px,transparent 1px 4px) left center/5px 22px no-repeat,#f2d49a;border:1px solid #896a2e;border-radius:2px}
-.marker-icon{width:11px;margin:0 4px;border-radius:4px 4px 2px 2px;background:linear-gradient(#314959 0 27%,#8e57a5 27% 82%,#314959 82%)}
-.pour-target{position:absolute;inset:26px auto 24px 50%;transform:translateX(-50%);width:65px;padding:0;border:2px dashed var(--green);background:#c7f0e44d;z-index:3}
-.scale{z-index:3}
-button.tick{border:0;border-radius:3px;background:transparent;min-height:0;height:19px;padding:0 1px;font-weight:600;white-space:nowrap}
-button.tick:not(:disabled){background:#fff;color:#125e52;min-width:43px}
-button.tick:disabled{opacity:1;cursor:default}
-@media(max-width:350px){.equipment button{font-size:.85rem}}
+  .calc .locked{color:var(--muted);font-size:.95rem;margin:.3em 0 0}
+  .calc .given{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 12px}
+  .chip{background:var(--soft);border-radius:999px;padding:.25em .75em;font-size:.9rem;font-weight:600;font-variant-numeric:tabular-nums}
+  .fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+  label{display:block;font-weight:650;font-size:.92rem;margin-bottom:4px}
+  input[type=text]{width:100%;font:inherit;font-size:1.05rem;padding:.55em .7em;border:1.5px solid var(--line);border-radius:10px;font-variant-numeric:tabular-nums;transition:border-color .2s,background .2s}
+  input[type=text]:focus{outline:none;border-color:var(--teal)}
+  input.good{border-color:var(--ok);background:#f1faf5}
+  input.wrong{border-color:var(--bad);background:#fdf5f0}
+  .hint{font-size:.85rem;color:var(--muted);margin-top:4px;min-height:1.2em}
+  .hint.bad{color:var(--bad)} .hint.good{color:var(--ok)}
+  .calc .actions{margin-top:12px}
 
-.equipment button,.pasteur{touch-action:none;user-select:none;-webkit-user-select:none}
-button.pasteur{min-height:54px;width:44px;padding:0;background:transparent;border:0;cursor:grab}
-.pasteur:before{left:0}.pasteur span{left:5px}
-.drag-preview{position:fixed;z-index:999;pointer-events:none;transform:translate(-50%,-50%);background:white;padding:8px;border:1px solid var(--green);border-radius:8px;box-shadow:0 4px 14px #18323635}
-.drag-preview .equipment-icon{display:block}
-.pouring{position:absolute;z-index:4;top:10px;left:calc(50% - 53px);visibility:hidden;transform:rotate(73deg) scale(1.5)}
-.scene.pouring-oil .pouring{visibility:visible}
-.pouring:after{content:"";position:absolute;top:-16px;left:7px;width:4px;height:13px;background:#d5a650;border-radius:4px;transform:rotate(-35deg)}
-#slow[aria-pressed=true]{background:#e2f3ed;border-color:var(--green)}
+  table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+  th,td{text-align:left;padding:.5em .4em;border-bottom:1px solid var(--line)}
+  th{font-size:.85rem;color:var(--muted)}
+  tbody tr.new{animation:flash 1.2s ease}
+  @keyframes flash{from{background:#d5f0e4}to{background:transparent}}
+  tfoot td{font-weight:750;border-bottom:none}
+  .summary{margin-top:14px}
+  .answer{margin-top:8px;padding:10px 12px;border-radius:10px;background:var(--soft);font-size:.95rem}
+  .foot{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:12px;flex-wrap:wrap}
 
-.scale{left:calc(50% - 96px);width:60px;border:1px solid #927246;border-radius:3px;background:#f4dfa8;box-shadow:0 1px 5px #5e472933}
-button.tick{right:2px;color:#533b14}
-button.tick:not(:disabled){color:#14574c;background:#fff;min-width:49px}
-.ruler-status{padding:8px 11px;margin:9px 0;border-left:3px solid var(--green);background:#eef6f3;color:#19483e;font-size:.9rem}
+  /* objets manipulables */
+  .obj{cursor:grab;outline:none;transition:opacity .4s}
+  .obj.dragging{cursor:grabbing}
+  .obj.used{cursor:default;opacity:.5}
+  .obj.waiting{opacity:.7}
+  .obj:focus-visible{filter:drop-shadow(0 0 4px #1f9e8f)}
+  .obj.pulse{animation:glow 1.6s ease-in-out infinite}
+  @keyframes glow{0%,100%{filter:drop-shadow(0 0 0 rgba(31,158,143,0))}50%{filter:drop-shadow(0 0 7px rgba(31,158,143,.95))}}
+  .marker{cursor:ns-resize;outline:none}
+  .marker.locked{cursor:default}
+  .marker:focus-visible .mtag{stroke:#8fd3c7;stroke-width:3}
+  .marker .grip{opacity:.75}
+  .marker.locked .grip{opacity:0}
+  @media (max-width:880px){
+    .layout{grid-template-columns:1fr}
+    .bench{position:static}
+    #scene{max-height:62vh}
+  }
+  @media (max-width:480px){.steps li{font-size:.7rem}.chrono{font-size:2rem}}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
-<main>
 <header>
-  <p class="level">Physique-chimie · Seconde bac pro</p>
+  <p class="kicker">Physique-chimie · Seconde bac pro · Laboratoire virtuel</p>
   <h1>Une goutte dans l’huile</h1>
-  <p>Comment mesurer la vitesse moyenne d’une goutte de solution aqueuse de permanganate de potassium qui descend dans l’huile ?</p>
+  <p class="lead">Comment mesurer la vitesse moyenne d’une goutte de solution aqueuse de permanganate de potassium qui descend dans l’huile&nbsp;? Référentiel&nbsp;: l’éprouvette.</p>
 </header>
-<div class="workspace">
-  <section class="card" aria-labelledby="measure-heading">
-    <h2 id="measure-heading">1. Préparer et chronométrer</h2>
-    <p>Prends l’éprouvette de 100 mL comme référentiel. Utilise le matériel pour préparer la mesure.</p>
-    <div class="equipment" role="group" aria-label="Matériel à manipuler">
-      <button type="button" id="oil-bottle" aria-pressed="false"><span class="equipment-icon bottle-icon" aria-hidden="true"></span>Bouteille d’huile</button>
-      <button type="button" id="ruler" aria-pressed="false" aria-controls="scale"><span class="equipment-icon ruler-icon" aria-hidden="true"></span>Règle</button>
-      <button type="button" id="marker" aria-pressed="false" disabled><span class="equipment-icon marker-icon" aria-hidden="true"></span>Marqueur</button>
-    </div>
-    <div class="scene" id="scene" role="group" aria-label="Éprouvette graduée de 100 mL vide, à côté d’une règle.">
-      <div class="tube" aria-hidden="true"><span>100 mL</span><div class="oil"></div></div>
-      <button type="button" class="pasteur" hidden id="pipette" aria-label="Déposer la goutte avec la pipette Pasteur"><span></span></button>
-      <span class="equipment-icon bottle-icon pouring" aria-hidden="true"></span>
-      <button type="button" id="pour-target" class="pour-target" hidden aria-label="Verser l’huile dans l’éprouvette"></button>
-      <div class="scale" id="scale" role="group" aria-label="Graduations de la règle" hidden></div>
-      <div class="axis" aria-hidden="true">
-        <div class="mark" id="mark-a" style="top:20%" hidden><span>A</span></div>
-        <div class="mark" id="mark-b" style="top:80%" hidden><span>B</span></div>
-        <div class="drop" id="drop" style="top:2%" hidden></div>
+
+<main class="layout">
+  <!-- ===== Paillasse ===== -->
+  <section class="card bench" aria-label="Paillasse">
+    <svg id="scene" viewBox="0 -62 420 587" role="application" aria-label="Paillasse : fais glisser les objets avec la souris ou le doigt. Au clavier, sélectionne un objet avec Tab et appuie sur Entrée.">
+      <defs>
+        <linearGradient id="oilGrad" x1="0" x2="1"><stop offset="0" stop-color="#f9e4b3"/><stop offset="1" stop-color="#e7b962"/></linearGradient>
+        <linearGradient id="tableGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#dbe7e4"/><stop offset="1" stop-color="#c9d9d5"/></linearGradient>
+        <radialGradient id="dropGrad" cx=".35" cy=".32" r=".75"><stop offset="0" stop-color="#d59ff0"/><stop offset=".45" stop-color="#8e3bb3"/><stop offset="1" stop-color="#55187a"/></radialGradient>
+        <clipPath id="cylClip"><path d="M170,30 L170,460 Q170,476 186,476 L230,476 Q246,476 246,460 L246,30 Z"/></clipPath>
+        <clipPath id="pipClip"><path d="M-4,-50 L4,-50 L4,-22 L1.6,-4 L1.6,0 L-1.6,0 L-1.6,-4 L-4,-22 Z"/></clipPath>
+      </defs>
+
+      <!-- table -->
+      <rect x="0" y="487" width="420" height="38" fill="url(#tableGrad)"/>
+      <line x1="0" y1="487" x2="420" y2="487" stroke="#b9cdc8" stroke-width="1.5"/>
+
+      <!-- zones cibles (visibles pendant un glisser) -->
+      <rect id="rulerSlot" x="100" y="22" width="52" height="456" rx="4" fill="rgba(31,111,102,.06)" stroke="#1f6f66" stroke-width="1.5" stroke-dasharray="6 5" opacity="0"/>
+      <rect id="cylHL" x="156" y="-14" width="104" height="66" rx="12" fill="rgba(31,111,102,.10)" stroke="#1f6f66" stroke-width="1.5" stroke-dasharray="6 5" opacity="0"/>
+
+      <!-- contenu de l’éprouvette -->
+      <g clip-path="url(#cylClip)">
+        <rect id="oil" x="166" y="480" width="84" height="0" fill="url(#oilGrad)"/>
+        <rect id="oilTop" x="166" y="480" width="84" height="2" fill="#fff" opacity="0"/>
+        <g id="ghosts"></g>
+        <ellipse id="puddle" cx="208" cy="476" rx="0" ry="0" fill="#6a2389"/>
+      </g>
+      <!-- verre -->
+      <path id="glass" d="M167,24 L167,460 Q167,479 186,479 L230,479 Q249,479 249,460 L249,24" fill="rgba(255,255,255,.18)" stroke="#7d9f9b" stroke-width="2.5"/>
+      <rect x="175" y="44" width="5" height="410" rx="2.5" fill="#fff" opacity=".35"/>
+      <rect x="163" y="21" width="90" height="5" rx="2.5" fill="#e9f2f0" stroke="#7d9f9b" stroke-width="1.5"/>
+      <rect x="148" y="479" width="120" height="8" rx="3" fill="#7d9f9b"/>
+      <text x="230" y="44" font-size="8.5" font-weight="700" fill="#4f6b66" text-anchor="middle">100 mL</text>
+      <ellipse id="ripple" cx="208" cy="52" rx="0" ry="0" fill="none" stroke="#fff" stroke-width="1.5" opacity="0"/>
+      <rect id="stream" x="222" y="16" width="5" height="0" rx="2.5" fill="url(#oilGrad)" opacity="0"/>
+
+      <!-- repères A et B -->
+      <g id="markers"></g>
+      <!-- aperçu du trait pendant que l’on tient le marqueur -->
+      <g id="preview" opacity="0" pointer-events="none">
+        <line x1="167" x2="249" y1="0" y2="0" stroke="#1f6f66" stroke-width="1.5" stroke-dasharray="3 3"/>
+        <rect x="183" y="-24" width="50" height="17" rx="5" fill="#1f6f66"/>
+        <text id="previewTxt" x="208" y="-12" font-size="10.5" font-weight="800" fill="#fff" text-anchor="middle">4 cm</text>
+      </g>
+
+      <!-- goutte -->
+      <circle id="drop" cx="208" cy="0" r="0" fill="url(#dropGrad)" opacity="0" pointer-events="none"/>
+      <circle id="fdrop" cx="208" cy="12" r="0" fill="url(#dropGrad)" pointer-events="none"/>
+
+      <!-- bécher de KMnO4 -->
+      <g id="beaker" pointer-events="none">
+        <rect x="354" y="452" width="48" height="33" rx="2" fill="#7b2d9b" opacity=".88"/>
+        <path d="M350,426 L352,428 L352,483 Q352,487 356,487 L400,487 Q404,487 404,483 L404,428 L406,426" fill="rgba(255,255,255,.25)" stroke="#7d9f9b" stroke-width="2"/>
+        <text x="378" y="505" font-size="9" font-weight="700" fill="#4f6b66" text-anchor="middle">KMnO₄ (aq)</text>
+      </g>
+
+      <!-- règle (posée à gauche au départ) -->
+      <g id="ruler" class="obj" tabindex="0" role="button" aria-label="Règle graduée : glisse-la contre l’éprouvette" transform="translate(-92,0)">
+        <rect x="100" y="22" width="52" height="456" rx="4" fill="#f4e1a8" stroke="#a9874c" stroke-width="1.2"/>
+        <g id="ticks" stroke="#5c4620" stroke-width="1"></g>
+        <g id="tickLabels" fill="#5c4620" font-size="9.5" font-weight="700" text-anchor="end"></g>
+        <text x="106" y="473" font-size="8" fill="#7a6234">cm</text>
+      </g>
+
+      <!-- marqueur (pointe à l’origine) -->
+      <g id="pen" class="obj" tabindex="0" role="button" aria-label="Marqueur : glisse-le sur l’éprouvette pour tracer un repère" transform="translate(342,330)">
+        <rect x="-6" y="-14" width="76" height="28" fill="transparent"/>
+        <path d="M0,0 L9,-4 L9,4 Z" fill="#222"/>
+        <rect x="9" y="-5" width="8" height="10" rx="1" fill="#555"/>
+        <rect x="17" y="-7" width="38" height="14" rx="3" fill="#24323a"/>
+        <rect x="24" y="-3" width="22" height="6" rx="2" fill="#fff" opacity=".85"/>
+        <rect x="55" y="-8" width="11" height="16" rx="3" fill="#111"/>
+      </g>
+
+      <!-- bouteille d’huile (goulot à l’origine) -->
+      <g id="bottle" class="obj" tabindex="0" role="button" aria-label="Bouteille d’huile : glisse-la sur l’éprouvette" transform="translate(378,130) rotate(0)">
+        <path d="M-6,0 L6,0 L6,18 Q22,22 22,38 L22,120 Q22,128 14,128 L-14,128 Q-22,128 -22,120 L-22,38 Q-22,22 -6,18 Z" fill="url(#oilGrad)" stroke="#b0863a" stroke-width="1.5"/>
+        <rect x="-16" y="62" width="32" height="30" rx="3" fill="#fff" opacity=".9"/>
+        <text x="0" y="80" font-size="8.5" font-weight="800" fill="#7a5a1c" text-anchor="middle">HUILE</text>
+      </g>
+
+      <!-- pipette Pasteur (pointe à l’origine) -->
+      <g id="pip" class="obj" tabindex="0" role="button" aria-label="Pipette Pasteur : glisse-la au-dessus de l’éprouvette" transform="translate(378,478)">
+        <rect x="-14" y="-74" width="28" height="78" fill="transparent"/>
+        <g clip-path="url(#pipClip)"><rect id="pipLiq" x="-6" y="0" width="12" height="0" fill="#7b2d9b"/></g>
+        <path d="M-4,-50 L4,-50 L4,-22 L1.6,-4 L1.6,0 L-1.6,0 L-1.6,-4 L-4,-22 Z" fill="rgba(255,255,255,.55)" stroke="#6f918d" stroke-width="1.2"/>
+        <ellipse id="bulb" cx="0" cy="-59" rx="9" ry="11" fill="#c8594a" stroke="#9c3f33" stroke-width="1"/>
+      </g>
+    </svg>
+
+    <div class="console">
+      <output id="chrono" class="chrono" aria-label="Chronomètre">0,00 s</output>
+      <div class="row">
+        <button id="goBtn" class="btn go" type="button">▶ Démarrer</button>
+        <button id="retryBtn" class="btn" type="button" disabled>↺ Refaire l’essai</button>
+        <span class="kbd"><kbd>Espace</kbd> = chrono</span>
+      </div>
+      <div class="row" style="grid-column:1 / -1">
+        <button id="slowBtn" class="btn toggle" type="button" aria-pressed="false">🐢 Ralenti ×0,25</button>
+        <button id="ghostBtn" class="btn toggle" type="button" aria-pressed="false" disabled>📸 Chronophotographie</button>
       </div>
     </div>
-    <p class="ruler-status" id="ruler-status" role="status" hidden></p>
-    <div class="prep">
-      <h3>Préparation</h3>
-      <p id="prep-description" role="status">Verse l’huile dans l’éprouvette de 100 mL en laissant un peu d’espace sous le bord.</p>
-      <button type="button" class="primary" id="prepare">Verser l’huile</button>
-    </div>
-    <p>Lance une goutte. Démarre le chronomètre quand son <strong>centre</strong> passe devant A. Arrête-le quand il passe devant B.</p>
-    <output id="clock" class="measure" aria-label="Chronomètre">0,00 s</output>
-    <div class="actions">
-      <button type="button" id="release" class="primary">Déposer la goutte avec la pipette</button>
-      <button type="button" id="timer" disabled>Démarrer le chrono</button>
-      <button type="button" id="retry" disabled>Refaire l’essai</button>
-      <button type="button" id="change-marks" disabled>Changer les repères</button>
-      <button type="button" id="slow" aria-pressed="false">Ralenti ×0,25</button>
-    </div>
-    <p class="status" id="message" role="status">Prêt pour le premier essai.</p>
   </section>
-  <div>
-    <section class="card" aria-labelledby="calc-heading">
-      <h2 id="calc-heading">2. Calculer la vitesse moyenne</h2>
-      <p>Calcule la distance entre les repères, convertis-la en mètres, puis applique <strong>v = d ÷ Δt</strong>. Arrondis la vitesse au millième de m/s.</p>
-      <form id="calc" novalidate>
-        <label for="distance">Distance AB (m)</label>
-        <input id="distance" inputmode="decimal" type="text" autocomplete="off">
-        <label for="speed">Vitesse moyenne (m/s)</label>
-        <input id="speed" inputmode="decimal" type="text" autocomplete="off" disabled>
-        <div class="actions"><button type="submit" class="primary" id="check" disabled>Vérifier et enregistrer</button></div>
-        <p class="status" id="feedback" role="status">Chronomètre le passage de la goutte entre A et B.</p>
-      </form>
+
+  <!-- ===== Panneau ===== -->
+  <div class="panel">
+    <section class="card consigne" aria-labelledby="stepTitle">
+      <ol class="steps" id="steps">
+        <li data-s="1">1 · Préparer</li><li data-s="2">2 · Chronométrer</li><li data-s="3">3 · Calculer</li><li data-s="4">4 · Conclure</li>
+      </ol>
+      <h2 id="stepTitle">Préparer le montage</h2>
+      <div id="consigneText" aria-live="polite"></div>
+      <ul class="checklist" id="checklist">
+        <li data-k="oil">Huile versée</li>
+        <li data-k="ruler">Règle placée</li>
+        <li data-k="A">Repère A tracé</li>
+        <li data-k="B">Repère B tracé</li>
+      </ul>
+      <div class="reading" id="reading"></div>
+      <div id="msg" aria-live="polite"></div>
     </section>
-    <section class="card" aria-labelledby="results-heading">
-      <h2 id="results-heading">3. Comparer les essais</h2>
+
+    <section class="card calc" aria-labelledby="calcTitle">
+      <h2 id="calcTitle">Calculer la vitesse moyenne</h2>
+      <p class="locked" id="calcLocked">Le calcul s’ouvre après une mesure réussie au chronomètre.</p>
+      <div id="calcBody" hidden>
+        <p style="margin:.2em 0">Calcule la distance entre A et B, convertis-la en mètres, puis applique <b>v = d ÷ Δt</b>. Arrondis v au millième de m/s.</p>
+        <div class="given" id="given"></div>
+        <form id="calcForm" autocomplete="off" novalidate>
+          <div class="fields">
+            <div><label for="dIn">Distance AB, d (m)</label><input id="dIn" type="text" inputmode="decimal" placeholder="ex. 0,1"><div class="hint" id="dHint"></div></div>
+            <div><label for="vIn">Vitesse moyenne, v (m/s)</label><input id="vIn" type="text" inputmode="decimal" placeholder="ex. 0,025"><div class="hint" id="vHint"></div></div>
+          </div>
+          <div class="actions"><button class="btn primary" type="submit">Vérifier et enregistrer</button></div>
+        </form>
+      </div>
+    </section>
+
+    <section class="card" aria-labelledby="resTitle">
+      <h2 id="resTitle">Comparer les essais</h2>
       <table>
-        <thead><tr><th scope="col">Essai</th><th scope="col">d (m)</th><th scope="col">Δt (s)</th><th scope="col">v (m/s)</th></tr></thead>
-        <tbody id="results"></tbody>
+        <thead><tr><th>Essai</th><th>A → B (cm)</th><th>d (m)</th><th>Δt (s)</th><th>v (m/s)</th></tr></thead>
+        <tbody id="tbody"></tbody>
+        <tfoot id="tfoot"></tfoot>
       </table>
-      <p id="comparison" hidden>Pour une même goutte simulée, que deviennent la durée et la vitesse moyenne quand la distance augmente ? Le moment où tu touches le chronomètre peut-il expliquer les écarts ?</p>
-      <details id="summary" hidden>
-        <summary>Ce que la mesure permet de conclure</summary>
-        <p>Tu as calculé une vitesse moyenne entre A et B dans le référentiel de l’éprouvette. Pour savoir si la vitesse est approximativement constante, mesure le temps mis par une même goutte pour parcourir deux intervalles successifs de même longueur.</p>
-      </details>
-      <div class="actions"><button type="button" id="reset">Reprendre depuis le début</button></div>
+      <div class="summary" id="summary" hidden>
+        <p style="margin:.2em 0"><b>Questions :</b> quand la distance AB augmente, que devient la durée&nbsp;? Et la vitesse moyenne&nbsp;? Le moment où tu touches le chronomètre peut-il expliquer les écarts&nbsp;? Que peux-tu en déduire sur le mouvement de la goutte dans le référentiel de l’éprouvette&nbsp;?</p>
+        <button class="btn" type="button" id="answerBtn">Afficher une réponse possible</button>
+        <div class="answer" id="answer" hidden></div>
+      </div>
+      <div class="foot">
+        <span class="kbd">Jusqu’à 6 essais.</span>
+        <button class="btn" type="button" id="resetBtn">↺ Tout recommencer</button>
+      </div>
     </section>
   </div>
-</div>
 </main>
-<script>
-"use strict";
-const get = id => document.getElementById(id);
-const release = get("release"), timer = get("timer"), retry = get("retry");
-const clock = get("clock"), message = get("message"), feedback = get("feedback");
-const distance = get("distance"), speed = get("speed"), check = get("check");
-const depth = 20, modelSpeed = 3.2, trialCount = 3;
-let markerA = null, markerB = null;
-let playbackRate = 1;
-const slow = get("slow"), changeMarks = get("change-marks"), pipette = get("pipette");
-const scene = get("scene");
-const records = [];
-const prepare = get("prepare"), prepDescription = get("prep-description");
-const preparation = [
-  ["Verser l’huile", "Verse l’huile dans l’éprouvette de 100 mL en laissant un peu d’espace sous le bord."],
-  ["Placer le repère A", "Place le repère A près du haut de la colonne d’huile, au niveau de la graduation 4 cm de la règle."],
-  ["Placer le repère B", "Place le repère B plus bas, au niveau de la graduation 16 cm de la règle."],
-  ["Prélever la solution de KMnO₄", "Presse la poire de la pipette Pasteur, plonge la pointe dans la solution aqueuse diluée de permanganate de potassium (KMnO₄) déjà préparée, puis relâche la poire pour aspirer un peu de solution."]
-];
-let prepStep = 0;
-let pipetteLoaded = false;
-let selectedTool = null;
-let rulerVisible = false;
-const oilBottle = get("oil-bottle"), ruler = get("ruler"), marker = get("marker");
-const scale = get("scale"), pourTarget = get("pour-target");
-const ticks = [];
-let placementFeedback = "";
-function drawPreparation() {
-  get("scene").classList.toggle("has-oil", prepStep > 0);
-  get("mark-a").hidden = prepStep < 2;
-  get("mark-b").hidden = prepStep < 3;
-  if (markerA !== null) get("mark-a").style.top = markerA / depth * 100 + "%";
-  if (markerB !== null) get("mark-b").style.top = markerB / depth * 100 + "%";
-  get("pipette").hidden = !pipetteLoaded;
-  const marking = prepStep === 1 || prepStep === 2;
-  oilBottle.disabled = prepStep !== 0;
-  ruler.disabled = attempt !== "ready";
-  marker.disabled = !marking || !rulerVisible;
-  oilBottle.setAttribute("aria-pressed", String(selectedTool === "oil"));
-  ruler.setAttribute("aria-pressed", String(rulerVisible));
-  marker.setAttribute("aria-pressed", String(selectedTool === "marker"));
-  pourTarget.hidden = selectedTool !== "oil";
-  scale.hidden = !rulerVisible;
-  const rulerStatus = get("ruler-status");
-  rulerStatus.hidden = !rulerVisible;
-  const reading = markerA === null ? "Règle placée à gauche de l’éprouvette."
-    : markerB === null ? "Lecture sur la règle : A = " + markerA + " cm."
-    : "Lecture sur la règle : A = " + markerA + " cm · B = " + markerB + " cm. Calcule la distance AB.";
-  if (rulerStatus.textContent !== reading) rulerStatus.textContent = reading;
-  for (const [id, cm] of [["mark-a",markerA],["mark-b",markerB]]) {
-    if (cm !== null) get(id).firstElementChild.textContent = id === "mark-a" ? "A · " + cm + " cm" : "B · " + cm + " cm";
-  }
-  for (const tick of ticks) tick.disabled = !marking || selectedTool !== "marker";
-  prepare.hidden = prepStep !== 3 || pipetteLoaded || records.length >= trialCount || attempt !== "ready";
-  const [label, instructions] = preparation[3];
-  prepare.textContent = label;
-  const instruction = placementFeedback || (prepStep === 0
-    ? selectedTool === "oil" ? "Touche l’éprouvette pour y verser l’huile." : "Glisse la bouteille sur l’éprouvette, ou sélectionne-la."
-    : marking
-      ? !rulerVisible ? "Glisse la règle à gauche de l’éprouvette, ou touche-la pour la placer."
-        : selectedTool !== "marker" ? "Glisse le marqueur sur une graduation, ou sélectionne-le."
-          : prepStep === 1 ? "Choisis une graduation entre 2 et 12 cm pour le repère A."
-            : "Place B au moins 6 cm plus bas que A, sans dépasser 18 cm."
-      : instructions);
-  prepDescription.textContent = records.length >= trialCount
-    ? "Les trois essais sont terminés."
-    : pipetteLoaded
-      ? "Glisse la pipette vers le haut de l’éprouvette pour déposer une goutte, ou utilise le bouton."
-      : attempt === "ready"
-        ? instruction
-        : "L’éprouvette contient l’huile et les deux repères sont en place.";
-  const sceneState = prepStep === 0 ? "vide" : "contenant de l’huile";
-  const marks = prepStep < 2 ? "" : prepStep === 2 ? " Repère A à " + markerA + " cm." : " Repères A à " + markerA + " cm et B à " + markerB + " cm.";
-  get("scene").setAttribute("aria-label", "Éprouvette graduée de 100 mL " + sceneState + (rulerVisible ? ", à côté d’une règle." : ".") + marks);
-}
-oilBottle.addEventListener("click", () => {
-  selectedTool = "oil";
-  drawControls();
-});
-let pourAnimation;
-function pourOil() {
-  if (prepStep !== 0) return;
-  scene.classList.add("pouring-oil");
-  pourAnimation = setTimeout(() => scene.classList.remove("pouring-oil"), 600);
-  selectedTool = null;
-  prepStep = 1;
-  drawControls();
-  ruler.focus();
-}
-pourTarget.addEventListener("click", pourOil);
-function placeRuler() {
-  if (attempt !== "ready") return;
-  rulerVisible = true;
-  drawControls();
-  if (prepStep < 3 && prepStep > 0) marker.focus();
-}
-ruler.addEventListener("click", placeRuler);
-marker.addEventListener("click", () => {
-  selectedTool = "marker";
-  placementFeedback = "";
-  drawControls();
-});
-prepare.addEventListener("click", () => {
-  pipetteLoaded = true;
-  drawControls();
-});
-function markAt(cm) {
-  if (selectedTool !== "marker" || (prepStep !== 1 && prepStep !== 2)) return;
-  const valid = prepStep === 1 ? cm >= 2 && cm <= 12 : cm >= markerA + 6 && cm <= 18;
-  placementFeedback = valid ? "" : prepStep === 1
-    ? "Choisis A entre 2 et 12 cm."
-    : "Choisis B au moins 6 cm plus bas que A, jusqu’à 18 cm.";
-  if (valid) {
-    if (prepStep === 1) markerA = cm;
-    else {
-      markerB = cm;
-      selectedTool = null;
-    }
-    prepStep++;
-  }
-  drawControls();
-  if (prepStep === 3) prepare.focus();
-}
-let launchedAt = null, startedAt = null, measured = null, startPosition = null, frame = 0, attempt = "ready";
-const format = (number, digits) => number.toFixed(digits).replace(".", ",");
-const read = field => {
-  const value = field.value.trim().replace(",", ".");
-  return /^\d+(?:\.\d+)?$/.test(value) ? Number(value) : NaN;
-};
-for (let cm = 0; cm <= depth; cm += 2) {
-  const tick = document.createElement("button");
-  tick.type = "button";
-  tick.addEventListener("click", () => markAt(cm));
-  ticks.push(tick);
-  tick.className = "tick";
-  tick.style.top = cm / depth * 100 + "%";
-  tick.textContent = cm + " cm";
-  get("scale").append(tick);
-}
-function position(now) {
-  return 0.4 + (now - launchedAt) / 1000 * playbackRate * modelSpeed;
-}
-function drawDrop(cm) {
-  get("drop").style.top = Math.min(cm / depth * 100, 98) + "%";
-}
-function drawTime(seconds) {
-  clock.textContent = format(seconds, 2) + " s";
-}
-function drawControls() {
-  release.disabled = attempt !== "ready" || !pipetteLoaded || records.length >= trialCount;
-  get("drop").hidden = attempt === "ready";
-  drawPreparation();
-  timer.disabled = attempt !== "falling";
-  slow.disabled = attempt !== "ready";
-  changeMarks.disabled = prepStep !== 3 || attempt !== "ready" || records.length >= trialCount;
-  slow.setAttribute("aria-pressed", String(playbackRate < 1));
-  timer.textContent = startedAt === null ? "Démarrer le chrono" : "Arrêter le chrono";
-  retry.disabled = attempt === "ready";
-  speed.disabled = check.disabled = attempt !== "measured";
-}
-function resetAttempt() {
-  cancelAnimationFrame(frame);
-  launchedAt = startedAt = measured = startPosition = null;
-  attempt = "ready";
-  drawDrop(0.4);
-  drawTime(0);
-  speed.value = "";
-  feedback.textContent = records.length === trialCount ? "Les trois essais sont enregistrés." : "Chronomètre le passage de la goutte entre A et B.";
-  message.textContent = records.length === trialCount ? "Les trois essais sont terminés." : prepStep < 3 ? "Prépare l’éprouvette et les repères." : "Prêt pour l’essai " + (records.length + 1) + ".";
-  drawControls();
-}
-function update(now) {
-  const cm = position(now);
-  drawDrop(cm);
-  if (startedAt !== null && measured === null) drawTime((now - startedAt) / 1000 * playbackRate);
-  if (cm < depth) {
-    frame = requestAnimationFrame(update);
-  } else if (attempt === "falling") {
-    attempt = "missed";
-    message.textContent = "La goutte a dépassé B. Recommence l’essai et arrête le chrono au passage de B.";
-    drawControls();
-  }
-}
-function releaseDrop() {
-  if (release.disabled) return;
-  launchedAt = performance.now();
-  attempt = "falling";
-  pipetteLoaded = false;
-  message.textContent = "Observe le centre de la goutte. Démarre au repère A.";
-  drawControls();
-  frame = requestAnimationFrame(update);
-}
-release.addEventListener("click", releaseDrop);
-pipette.addEventListener("click", releaseDrop);
-slow.addEventListener("click", () => {
-  playbackRate = playbackRate === 1 ? 0.25 : 1;
-  drawControls();
-});
-changeMarks.addEventListener("click", () => {
-  markerA = markerB = null;
-  pipetteLoaded = false;
-  prepStep = 1;
-  selectedTool = "marker";
-  distance.value = "";
-  placementFeedback = "";
-  drawControls();
-});
-timer.addEventListener("click", () => {
-  const now = performance.now(), cm = position(now);
-  if (startedAt === null) {
-    startedAt = now;
-    startPosition = cm;
-    message.textContent = "Chrono en cours. Arrête-le au repère B.";
-  } else {
-    measured = Math.round((now - startedAt) * playbackRate / 10) / 100;
-    drawTime(measured);
-    if (Math.abs(startPosition - markerA) > 1.5 || Math.abs(cm - markerB) > 1.5) {
-      attempt = "missed";
-      message.textContent = "Un des passages a été pris trop loin de son repère. Refais l’essai.";
-    } else {
-      attempt = "measured";
-      message.textContent = "Durée mesurée. Tu peux calculer la vitesse moyenne.";
-      feedback.textContent = "Utilise le temps affiché au chronomètre.";
-    }
-  }
-  drawControls();
-});
-retry.addEventListener("click", resetAttempt);
-get("calc").addEventListener("submit", event => {
-  event.preventDefault();
-  if (attempt !== "measured") return;
-  const distanceM = (markerB - markerA) / 100;
-  if (Math.abs(read(distance) - distanceM) > 0.00001 || !Number.isFinite(read(distance))) {
-    feedback.textContent = "Soustrais la position de A à celle de B, puis convertis les centimètres en mètres.";
-    return;
-  }
-  const expected = Number((distanceM / measured).toFixed(3));
-  if (Math.abs(read(speed) - expected) > 0.00001 || !Number.isFinite(read(speed))) {
-    feedback.textContent = "Divise la distance en mètres par la durée affichée, puis arrondis à trois décimales.";
-    return;
-  }
-  records.push({distance:distanceM,seconds:measured,value:expected});
-  renderResults();
-  resetAttempt();
-  feedback.textContent = "Calcul correct. L’essai a été enregistré.";
-});
-function renderResults() {
-  get("results").replaceChildren(...Array.from({length:trialCount}, (_,index) => {
-    const record = records[index];
-    const row = document.createElement("tr");
-    const heading = document.createElement("th");
-    heading.scope = "row";
-    heading.textContent = index + 1;
-    row.append(heading);
-    for (const value of record ? [format(record.distance,3), format(record.seconds,2), format(record.value,3)] : ["—","—","—"]) {
-      row.insertCell().textContent = value;
-    }
-    return row;
-  }));
-  get("comparison").hidden = get("summary").hidden = records.length < trialCount;
-}
-get("reset").addEventListener("click", () => {
-  records.length = 0;
-  markerA = markerB = null;
-  playbackRate = 1;
-  clearTimeout(pourAnimation);
-  scene.classList.remove("pouring-oil");
-  prepStep = 0;
-  pipetteLoaded = false;
-  selectedTool = null;
-  rulerVisible = false;
-  placementFeedback = "";
-  distance.value = "";
-  get("summary").open = false;
-  renderResults();
-  resetAttempt();
-});
 
-function enableDrag(button, drop) {
-  let origin = null;
-  let preview = null;
-  let ignoreClick = false;
-  button.addEventListener("pointerdown", event => {
-    if (!event.isPrimary || event.button !== 0) return;
-    ignoreClick = false;
-    origin = {id:event.pointerId, x:event.clientX, y:event.clientY};
-  });
-  button.addEventListener("pointermove", event => {
-    if (origin?.id !== event.pointerId) return;
-    if (!preview && Math.hypot(event.clientX-origin.x,event.clientY-origin.y) < 8) return;
-    if (!preview) {
-      if (!button.hasPointerCapture(event.pointerId)) button.setPointerCapture(event.pointerId);
-      preview = document.createElement("span");
-      preview.className = "drag-preview";
-      preview.setAttribute("aria-hidden", "true");
-      const icon = button.querySelector(".equipment-icon");
-      if (icon) preview.append(icon.cloneNode(true));
-      else preview.textContent = "Pipette Pasteur";
-      document.body.append(preview);
-    }
-    preview.style.left = event.clientX + "px";
-    preview.style.top = event.clientY + "px";
-  });
-  function clear() {
-    preview?.remove();
-    preview = origin = null;
+<script>
+(() => {
+  "use strict";
+  // ---------- Géométrie ----------
+  const CM = 22, Y0 = 30, XC = 208, SURF = 1.0, BOTTOM = (476 - Y0) / CM, TIP_Y = 12;
+  const yOf = cm => Y0 + cm * CM;
+  const cmOf = y => (y - Y0) / CM;
+  const NS = "http://www.w3.org/2000/svg";
+  const $ = id => document.getElementById(id);
+  const RM = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const fmt = (x, n) => x.toFixed(n).replace(".", ",");
+  const fmtCm = x => Number.isInteger(x) ? String(x) : fmt(x, 1);
+  const snap = cm => Math.round(cm * 2) / 2;
+  const MAX_TRIALS = 6, TOL = 0.35;
+  const REST = {bottle:{x:378, y:130}, ruler:{x:-92, y:0}, pen:{x:342, y:330}, pip:{x:378, y:478}};
+
+  // ---------- État ----------
+  const state = {
+    oil:false, ruler:false, marks:0, A:null, B:null,
+    busy:false, slow:false, sim:0, drop:null, lastDrop:null, dropId:0,
+    chrono:{running:false, startAt:null, stopAt:null, forDrop:null},
+    pending:null, trials:[], ghosts:false, puddles:0, msg:null, answer:false, pipLiq:0
+  };
+  const markersReady = () => state.marks === 2;
+
+  // ---------- Outils d’animation ----------
+  const ease = p => p < .5 ? 2*p*p : 1 - Math.pow(-2*p + 2, 2) / 2;
+  const easeOut = p => 1 - Math.pow(1 - p, 3);
+  function tween(ms, fn, e = ease){
+    if (RM) ms = Math.min(ms, 120);
+    return new Promise(res => {
+      const t0 = performance.now();
+      const step = now => { const p = Math.min(1, (now - t0) / ms); fn(e(p)); p < 1 ? requestAnimationFrame(step) : res(); };
+      requestAnimationFrame(step);
+    });
   }
-  button.addEventListener("pointercancel", clear);
-  button.addEventListener("lostpointercapture", clear);
-  button.addEventListener("pointerup", event => {
-    if (origin?.id !== event.pointerId) return;
-    const dragged = Boolean(preview);
-    clear();
-    if (!dragged) return;
-    ignoreClick = true;
-    drop(event.clientX, event.clientY);
+  const lerp = (a, b, p) => a + (b - a) * p;
+  const attr = (el, o) => { for (const k in o) el.setAttribute(k, o[k]); return el; };
+  const mk = (tag, o, parent) => { const el = attr(document.createElementNS(NS, tag), o); if (parent) parent.appendChild(el); return el; };
+  const svg = $("scene");
+  function svgPoint(e){ const pt = svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY; return pt.matrixTransform(svg.getScreenCTM().inverse()); }
+  const clampX = x => Math.min(Math.max(x, 4), 416), clampY = y => Math.min(Math.max(y, -58), 520);
+  function say(type, html){ state.msg = {type, html}; renderMsg(); }
+
+  // ---------- Glisser-déposer générique ----------
+  function draggable(el, o){
+    let drag = null;
+    el.addEventListener("pointerdown", e => {
+      if (e.button > 0) return;
+      if (!o.canDrag()){ o.denied && o.denied(); return; }
+      e.preventDefault();
+      el.parentNode.appendChild(el);              // passe au premier plan
+      el.setPointerCapture(e.pointerId);
+      const p = svgPoint(e), s = o.pos;
+      drag = {dx: s.x - p.x, dy: s.y - p.y};
+      el.classList.add("dragging"); el.classList.remove("pulse");
+      o.onStart && o.onStart();
+    });
+    el.addEventListener("pointermove", e => {
+      if (!drag) return;
+      const p = svgPoint(e);
+      o.set(clampX(p.x + drag.dx), clampY(p.y + drag.dy), true);
+      o.onMove && o.onMove();
+    });
+    const end = () => { if (!drag) return; drag = null; el.classList.remove("dragging"); o.onDrop(); };
+    el.addEventListener("pointerup", end);
+    el.addEventListener("pointercancel", end);
+    el.addEventListener("keydown", e => {
+      if (e.key !== "Enter") return;
+      e.preventDefault();
+      if (o.canDrag()) o.keyAction(); else o.denied && o.denied();
+    });
+  }
+  // ramène un objet à sa place
+  async function goHome(o, ms = 450){
+    const x0 = o.pos.x, y0 = o.pos.y, a0 = o.pos.a || 0, r = REST[o.name];
+    await tween(ms, p => o.set(lerp(x0, r.x, p), lerp(y0, r.y, p), false, lerp(a0, 0, p)));
+  }
+  const overCylTop = (x, y) => x > 152 && x < 264 && y > -60 && y < 75;
+
+  // ---------- Règle ----------
+  (function buildRuler(){
+    const t = $("ticks"), l = $("tickLabels");
+    for (let mm = 0; mm <= 200; mm++){
+      const y = yOf(mm/10), len = mm % 10 === 0 ? 12 : mm % 5 === 0 ? 8 : 4;
+      mk("line", {x1:152-len, x2:152, y1:y, y2:y, "stroke-width": mm % 10 === 0 ? 1.2 : .7}, t);
+      if (mm % 10 === 0) mk("text", {x:137, y:y+3.3}, l).textContent = mm/10;
+    }
+  })();
+  const ruler = {name:"ruler", el:$("ruler"), pos:{...REST.ruler},
+    set(x, y){ this.pos = {x, y}; this.el.setAttribute("transform", `translate(${x},${y})`); },
+    canDrag: () => !state.ruler && !state.busy,
+    onStart(){ $("rulerSlot").setAttribute("opacity", .55); },
+    onMove(){ $("rulerSlot").setAttribute("opacity", this.near() ? 1 : .55); },
+    near(){ return Math.abs(this.pos.x) < 45 && Math.abs(this.pos.y) < 60; },
+    async onDrop(){
+      $("rulerSlot").setAttribute("opacity", 0);
+      if (this.near()) return this.place();
+      say("info", "Place la règle <b>contre l’éprouvette</b>, dans le cadre en pointillés, pour pouvoir lire les hauteurs.");
+      await goHome(this);
+    },
+    async place(){
+      const x0 = this.pos.x, y0 = this.pos.y;
+      state.busy = true;
+      await tween(Math.abs(x0) > 50 ? 650 : 220, p => this.set(lerp(x0, 0, p), lerp(y0, 0, p)), easeOut);
+      state.ruler = true; state.busy = false; this.el.classList.add("fixed");
+      this.el.style.cursor = "default";
+      state.msg = {type:"ok", html:"Règle placée : son zéro est au niveau du haut de l’éprouvette."};
+      render();
+    },
+    keyAction(){ this.place(); }
+  };
+  draggable(ruler.el, ruler);
+
+  // ---------- Bouteille d’huile ----------
+  function setLevel(y){ attr($("oil"), {y, height: 480 - y}); attr($("oilTop"), {y, opacity: y < 479 ? .55 : 0}); }
+  const bottle = {name:"bottle", el:$("bottle"), pos:{...REST.bottle, a:0},
+    set(x, y, dragging, a){
+      if (a === undefined) a = dragging && overCylTop(x, y) ? -25 : 0;
+      this.pos = {x, y, a};
+      this.el.setAttribute("transform", `translate(${x},${y}) rotate(${a})`);
+    },
+    canDrag: () => !state.oil && !state.busy,
+    denied(){ if (state.oil) say("info", "L’éprouvette contient déjà l’huile."); },
+    onStart(){ $("cylHL").setAttribute("opacity", .5); },
+    onMove(){ $("cylHL").setAttribute("opacity", overCylTop(this.pos.x, this.pos.y) ? 1 : .5); },
+    async onDrop(){
+      $("cylHL").setAttribute("opacity", 0);
+      if (overCylTop(this.pos.x, this.pos.y)) return this.pour();
+      say("info", "Amène le goulot de la bouteille <b>au-dessus de l’éprouvette</b> (zone en pointillés).");
+      await goHome(this);
+    },
+    async pour(){
+      state.busy = true; state.msg = null; render();
+      const s = $("stream"), {x:x0, y:y0, a:a0} = this.pos;
+      await tween(500, p => this.set(lerp(x0, 226, p), lerp(y0, 14, p), false, lerp(a0 || 0, -118, p)));
+      await tween(260, p => attr(s, {opacity: 1, height: (476 - 16) * p}), easeOut);
+      await tween(1700, p => { const y = lerp(476, yOf(SURF), p); setLevel(y); attr(s, {height: y - 16}); }, p => p);
+      await tween(220, p => attr(s, {opacity: 1 - p}));
+      await goHome(this, 700);
+      this.el.classList.add("used");
+      state.oil = true; state.busy = false;
+      state.msg = {type:"ok", html:"Huile versée, en laissant de la place sous le bord de l’éprouvette."};
+      render();
+    },
+    keyAction(){ this.pour(); }
+  };
+  draggable(bottle.el, bottle);
+
+  // ---------- Marqueur : tracer A et B ----------
+  const overCylBody = (x, y) => x > 150 && x < 270 && y > yOf(0.5) && y < yOf(20);
+  const pen = {name:"pen", el:$("pen"), pos:{...REST.pen},
+    set(x, y){ this.pos = {x, y}; this.el.setAttribute("transform", `translate(${x},${y})`); },
+    canDrag: () => state.marks < 2 && !state.busy,
+    denied(){ if (state.marks >= 2) say("info", "Les deux repères sont tracés. Pour les modifier, fais glisser leurs étiquettes A et B."); },
+    cm(){ return Math.min(Math.max(snap(cmOf(this.pos.y)), 1.5), 19.5); },
+    onMove(){
+      const pv = $("preview");
+      if (overCylBody(this.pos.x, this.pos.y)){
+        const c = this.cm();
+        pv.setAttribute("transform", `translate(0,${yOf(c)})`);
+        $("previewTxt").textContent = state.ruler ? `${fmtCm(c)} cm` : "? cm";
+        pv.setAttribute("opacity", 1);
+      } else pv.setAttribute("opacity", 0);
+    },
+    async onDrop(){
+      $("preview").setAttribute("opacity", 0);
+      if (!overCylBody(this.pos.x, this.pos.y)){
+        say("info", "Pose la pointe du marqueur <b>sur l’éprouvette</b>, à la hauteur où tu veux tracer le repère.");
+        return goHome(this);
+      }
+      if (!state.ruler){
+        say("warn", "Place d’abord la règle : sans elle, tu ne pourras pas lire la hauteur de ton repère.");
+        return goHome(this);
+      }
+      this.mark(this.cm());
+    },
+    async mark(c){
+      if (state.marks === 1 && Math.abs(c - state.A) < 2){
+        say("warn", `Trace B à au moins 2 cm de A (A est à ${fmtCm(state.A)} cm), sinon la durée sera trop courte pour être mesurée.`);
+        return goHome(this);
+      }
+      state.busy = true; state.msg = null;
+      let k;
+      if (state.marks === 0){ state.A = c; k = "A"; createMarker("A"); }
+      else {
+        createMarker("B");
+        const old = state.A; state.A = Math.min(old, c); state.B = Math.max(old, c);
+        k = c === state.A ? "A" : "B";
+        updateMarker("A"); updateMarker("B");
+        markerEls[k === "A" ? "B" : "A"].line.setAttribute("x2", 249);
+      }
+      updateMarker(k);
+      const line = markerEls[k].line, y = yOf(c), x0 = this.pos.x, y0 = this.pos.y;
+      line.setAttribute("x2", 167);
+      markerEls[k].g.setAttribute("opacity", 1);
+      await tween(180, p => this.set(lerp(x0, 167, p), lerp(y0, y, p)));
+      await tween(520, p => { const x = lerp(167, 249, p); this.set(x, y); line.setAttribute("x2", x); }, p => p);
+      state.marks++;
+      if (state.marks === 2) this.el.classList.add("used");
+      await goHome(this, 420);
+      state.busy = false;
+      state.msg = {type:"ok", html: state.marks === 1
+        ? `Repère A tracé à ${fmtCm(state.A)} cm. Trace maintenant le repère B, plus bas.`
+        : `Repères tracés : A = ${fmtCm(state.A)} cm et B = ${fmtCm(state.B)} cm. Tu pourras les déplacer en faisant glisser leurs étiquettes.`};
+      render();
+    },
+    keyAction(){ this.mark(state.marks === 0 ? 4 : 16); }
+  };
+  draggable(pen.el, pen);
+
+  // étiquettes A / B (ajustables après le tracé)
+  const markerEls = {};
+  function createMarker(k){
+    if (markerEls[k]) return;
+    const g = mk("g", {class:"marker", tabindex:0, role:"slider", "aria-label":`Repère ${k}`, "aria-valuemin":1.5, "aria-valuemax":19.5, opacity:0}, $("markers"));
+    mk("rect", {x:158, y:-10, width:182, height:20, fill:"transparent"}, g);
+    const line = mk("line", {x1:167, x2:167, y1:0, y2:0, stroke:"#14564e", "stroke-width":2, "stroke-linecap":"round"}, g);
+    mk("line", {x1:249, x2:256, y1:0, y2:0, stroke:"#14564e", "stroke-width":2}, g);
+    mk("rect", {class:"mtag", x:256, y:-11, width:80, height:22, rx:6, fill:"#14564e"}, g);
+    const tx = mk("text", {x:290, y:4, "font-size":11, "font-weight":800, fill:"#fff", "text-anchor":"middle"}, g);
+    mk("path", {class:"grip", d:"M328,-5 l3,-3 l3,3 M328,5 l3,3 l3,-3", stroke:"#fff", "stroke-width":1.4, fill:"none"}, g);
+    markerEls[k] = {g, tx, line};
+    let dragging = false;
+    g.addEventListener("pointerdown", e => {
+      if (!markersReady()) return;
+      if (markersLocked()){ lockedHint(); return; }
+      dragging = true; g.setPointerCapture(e.pointerId); e.preventDefault(); e.stopPropagation();
+    });
+    g.addEventListener("pointermove", e => { if (dragging) setMarker(k, cmOf(svgPoint(e).y)); });
+    const end = () => { if (dragging){ dragging = false; render(); } };
+    g.addEventListener("pointerup", end); g.addEventListener("pointercancel", end);
+    g.addEventListener("keydown", e => {
+      const d = {ArrowUp:-.5, ArrowDown:.5}[e.key];
+      if (d === undefined || !markersReady()) return;
+      e.preventDefault();
+      if (markersLocked()){ lockedHint(); return; }
+      setMarker(k, state[k] + d); render();
+    });
+  }
+  function setMarker(k, cm){
+    cm = snap(cm);
+    if (k === "A") cm = Math.min(Math.max(cm, 1.5), state.B - 2);
+    else cm = Math.min(Math.max(cm, state.A + 2), 19.5);
+    if (cm === state[k]) return;
+    state[k] = cm; updateMarker(k); updateReading();
+  }
+  function updateMarker(k){
+    const {g, tx} = markerEls[k];
+    g.setAttribute("transform", `translate(0,${yOf(state[k])})`);
+    tx.textContent = `${k} · ${fmtCm(state[k])} cm`;
+    g.setAttribute("aria-valuenow", state[k]);
+    g.setAttribute("aria-valuetext", `${fmtCm(state[k])} centimètres`);
+  }
+  const markersLocked = () => state.busy || (falling() && !state.drop.evaluated) || !!state.pending || state.chrono.running;
+  function lockedHint(){
+    say("warn", state.pending
+      ? "Les repères sont bloqués pendant le calcul : la distance AB doit correspondre à ta mesure. Enregistre l’essai (ou refais une goutte) pour les déplacer."
+      : "Attends la fin de la chute pour déplacer les repères.");
+  }
+
+  // ---------- Pipette et goutte ----------
+  const TAU = 0.22;
+  const sOf = (d, t) => d.vL * (t - TAU * (1 - Math.exp(-t / TAU)));
+  function timeToDepth(d, depth){
+    let lo = 0, hi = depth / d.vL + 6 * TAU;
+    for (let i = 0; i < 50; i++){ const m = (lo + hi) / 2; sOf(d, m) < depth ? lo = m : hi = m; }
+    return (lo + hi) / 2;
+  }
+  function newDrop(){
+    const vL = 2.7 * (1 + (Math.random() - .5) * .12);   // cm/s, varie avec la taille de la goutte
+    return {id: ++state.dropId, vL, r: .31 * Math.sqrt(vL / 2.7), state:"forming", y:0, vy:0, evaluated:false};
+  }
+  const falling = () => state.drop && ["air","surface","sinking"].includes(state.drop.state);
+  const dropEl = $("drop"), fdrop = $("fdrop"), bulb = $("bulb");
+  function setLiq(h){ state.pipLiq = h; attr($("pipLiq"), {y: -h, height: h}); }
+
+  const pip = {name:"pip", el:$("pip"), pos:{...REST.pip},
+    set(x, y){ this.pos = {x, y}; this.el.setAttribute("transform", `translate(${x},${y})`); },
+    canDrag: () => !state.busy && !falling() && state.trials.length < MAX_TRIALS,
+    denied(){
+      if (falling()) say("info", "Attends que la goutte soit arrivée au fond avant d’en déposer une autre.");
+      else if (state.trials.length >= MAX_TRIALS) say("info", "Tu as fait le nombre maximal d’essais.");
+    },
+    async fill(){
+      if (state.pipLiq > 8) return;
+      if (state.oil && markersReady()) say("info", "Prélèvement : tu presses la poire, tu plonges la pointe dans la solution diluée de permanganate de potassium (KMnO₄), puis tu relâches la poire : la solution monte dans la pipette.");
+      await tween(150, p => bulb.setAttribute("ry", 11 - 3*p));
+      await tween(330, p => { bulb.setAttribute("ry", 8 + 3*p); setLiq(24*p); });
+    },
+    onStart(){ this.fill(); $("cylHL").setAttribute("opacity", .5); },
+    onMove(){ $("cylHL").setAttribute("opacity", overCylTop(this.pos.x, this.pos.y) ? 1 : .5); },
+    async onDrop(){
+      $("cylHL").setAttribute("opacity", 0);
+      if (!overCylTop(this.pos.x, this.pos.y)){
+        if (state.oil && markersReady()) say("info", "Amène la pointe de la pipette <b>juste au-dessus de l’éprouvette</b> (zone en pointillés).");
+        return goHome(this);
+      }
+      if (!state.oil){ say("warn", "Il faut d’abord verser l’huile dans l’éprouvette."); return goHome(this); }
+      if (!markersReady()){ say("warn", "Trace d’abord les deux repères A et B avec le marqueur : ils servent à chronométrer la chute."); return goHome(this); }
+      this.deposit();
+    },
+    async deposit(){
+      state.busy = true; state.pending = null; state.msg = null; state.ghosts = false;
+      resetChrono(); drawGhosts(); clearCalc(); render();
+      await this.fill();
+      const x0 = this.pos.x, y0 = this.pos.y;
+      await tween(260, p => this.set(lerp(x0, XC, p), lerp(y0, TIP_Y, p)));
+      const d = newDrop(), rpx = d.r * CM;
+      await tween(150, p => bulb.setAttribute("ry", 11 - 2.5*p));
+      await tween(450, p => { attr(fdrop, {r: rpx*p, cy: TIP_Y + rpx*p}); setLiq(24 - 8*p); });
+      attr(fdrop, {r:0});
+      d.state = "air"; d.y = (TIP_Y + rpx - Y0) / CM;
+      attr(dropEl, {r: rpx, cy: yOf(d.y), opacity: 1});
+      state.drop = d; state.busy = false; render();
+      tween(160, p => bulb.setAttribute("ry", 8.5 + 2.5*p));
+      await goHome(this, 800);
+    },
+    keyAction(){ if (state.oil && markersReady()) this.deposit(); else this.onDrop(); }
+  };
+  draggable(pip.el, pip);
+
+  function updateDrop(dt){
+    const d = state.drop; if (!d) return;
+    if (d.state === "air"){
+      d.vy += 981 * dt; d.y += d.vy * dt;
+      if (d.y >= SURF){ d.y = SURF; d.state = "surface"; d.pauseEnd = state.sim + .4 + Math.random() * .4; splash(); }
+    } else if (d.state === "surface"){
+      if (state.sim >= d.pauseEnd){
+        d.state = "sinking"; d.tStart = state.sim; d.A = state.A; d.B = state.B;
+        d.tA = d.tStart + timeToDepth(d, state.A - SURF);
+        d.tB = d.tStart + timeToDepth(d, state.B - SURF);
+      }
+    } else if (d.state === "sinking"){
+      d.y = SURF + sOf(d, state.sim - d.tStart);
+      if (d.y >= BOTTOM - d.r){ d.y = BOTTOM - d.r; settle(d); }
+    }
+    if (d.state !== "settled") dropEl.setAttribute("cy", yOf(d.y));
+  }
+  function splash(){ const r = $("ripple"); tween(500, p => attr(r, {rx: 8 + 22*p, ry: 1.5 + 1.5*p, opacity: .9*(1-p)}), easeOut); }
+  function settle(d){
+    d.state = "settled"; d.settledAt = state.sim; state.lastDrop = d; state.puddles++;
+    const pud = $("puddle"), r0 = d.r * CM;
+    const rx1 = Math.min(30, 7 + 4*state.puddles), ry1 = Math.min(5, 2.2 + .6*state.puddles);
+    const rx0 = +pud.getAttribute("rx"), ry0 = +pud.getAttribute("ry");
+    tween(450, p => {
+      attr(dropEl, {r: r0*(1 - .6*p), cy: yOf(BOTTOM - d.r) + r0*.6*p, opacity: 1 - p});
+      attr(pud, {rx: lerp(rx0, rx1, p), ry: lerp(ry0, ry1, p), cy: 476 - lerp(ry0, ry1, p)});
+    });
+    render();
+  }
+
+  // ---------- Chronophotographie ----------
+  function drawGhosts(){
+    const g = $("ghosts"); g.innerHTML = "";
+    const d = state.lastDrop;
+    if (!state.ghosts || !d) return;
+    for (let t = 0, i = 0; ; t += .5, i++){
+      const y = SURF + sOf(d, t);
+      if (y > BOTTOM - d.r) break;
+      mk("circle", {cx: XC, cy: yOf(y), r: d.r*CM, fill: "rgba(123,45,155,.18)", stroke: "#7b2d9b", "stroke-width": 1.2, opacity: 0, style:`transition:opacity .3s ${i*0.05}s`}, g);
+    }
+    requestAnimationFrame(() => g.querySelectorAll("circle").forEach(c => c.setAttribute("opacity", 1)));
+  }
+
+  // abandonne l’essai en cours (goutte retirée, chrono remis à zéro)
+  function retry(){
+    if (state.busy) return;
+    if (state.drop && state.drop.state !== "settled"){
+      const el = dropEl, o = +el.getAttribute("opacity");
+      tween(250, p => el.setAttribute("opacity", o * (1 - p)));
+    }
+    state.drop = null; state.pending = null; resetChrono(); clearCalc();
+    state.msg = {type:"info", html:"Essai annulé. Reprends la pipette pour déposer une nouvelle goutte."};
+    render();
+  }
+  // ---------- Chronomètre ----------
+  function resetChrono(){ Object.assign(state.chrono, {running:false, startAt:null, stopAt:null, forDrop:null}); }
+  function toggleChrono(){
+    const c = state.chrono;
+    if (!c.running){
+      c.running = true; c.startAt = state.sim; c.stopAt = null;
+      c.forDrop = (state.drop && !state.drop.evaluated) ? state.drop.id : null;
+    } else { c.running = false; c.stopAt = state.sim; }
+    render();
+  }
+  const chronoValue = () => { const c = state.chrono; return c.startAt === null ? 0 : (c.running ? state.sim : c.stopAt) - c.startAt; };
+
+  // ---------- Évaluation de la mesure ----------
+  function checkEvaluate(){
+    const d = state.drop; if (!d || d.evaluated) return;
+    const passedB = (d.state === "sinking" && state.sim >= d.tB) || d.state === "settled";
+    if (!passedB) return;
+    const c = state.chrono;
+    if (c.forDrop === d.id && !c.running && c.stopAt !== null) return evaluate(d);
+    if (d.state === "settled" && c.forDrop !== d.id && state.sim - d.settledAt > 1){
+      d.evaluated = true;
+      state.msg = {type:"warn", html:"La goutte est arrivée au fond sans être chronométrée. Reprends la pipette pour déposer une nouvelle goutte."};
+      render();
+    }
+  }
+  function evaluate(d){
+    d.evaluated = true;
+    const c = state.chrono, startErr = c.startAt - d.tA, stopErr = c.stopAt - d.tB;
+    const trueDt = d.tB - d.tA, dt = Math.round((c.stopAt - c.startAt) * 100) / 100;
+    if (Math.abs(startErr) <= TOL && Math.abs(stopErr) <= TOL){
+      state.pending = {A: d.A, B: d.B, dt, trueDt};
+      state.msg = {type:"ok", html:`Bonne mesure&nbsp;: <b>Δt = ${fmt(dt,2)} s</b>. Passe au calcul.`};
+      render();
+      setTimeout(() => { $("calcBody").scrollIntoView({block:"nearest", behavior:"smooth"}); $("dIn").focus({preventScroll:true}); }, 250);
+    } else {
+      const parts = [];
+      if (startErr > TOL) parts.push(`démarré environ ${fmt(startErr,1)} s trop tard`);
+      if (startErr < -TOL) parts.push(`démarré environ ${fmt(-startErr,1)} s trop tôt`);
+      if (stopErr > TOL) parts.push(`arrêté environ ${fmt(stopErr,1)} s trop tard`);
+      if (stopErr < -TOL) parts.push(`arrêté environ ${fmt(-stopErr,1)} s trop tôt`);
+      state.msg = {type:"bad", html:`Mesure à refaire&nbsp;: tu as ${parts.join(" et ")}. Le chrono doit démarrer quand le <b>centre</b> de la goutte passe devant A et s’arrêter devant B. Reprends la pipette pour une nouvelle goutte.${state.slow ? "" : " Astuce&nbsp;: active le ralenti."}`};
+      render();
+    }
+  }
+
+  // ---------- Calcul ----------
+  const parseNum = s => { s = String(s).trim().replace(/\s/g, "").replace(",", "."); return s === "" || !/^[-+]?\d*\.?\d+$/.test(s) ? NaN : Number(s); };
+  const decimals = s => { const m = String(s).trim().replace(",", ".").split(".")[1]; return m ? m.length : 0; };
+  const near = (a, b, tol) => Number.isFinite(a) && Math.abs(a - b) <= tol;
+  function clearCalc(){
+    for (const id of ["dIn","vIn"]){ $(id).value = ""; $(id).className = ""; }
+    for (const id of ["dHint","vHint"]){ $(id).textContent = ""; $(id).className = "hint"; }
+  }
+  function hint(id, ok, text){
+    $(id + "In").className = ok ? "good" : "wrong";
+    const h = $(id + "Hint"); h.className = "hint " + (ok ? "good" : "bad"); h.textContent = text;
+  }
+  function check(e){
+    e.preventDefault();
+    const p = state.pending; if (!p) return;
+    const ABcm = p.B - p.A, dTrue = ABcm / 100;
+    const vRaw = $("vIn").value, dv = parseNum($("dIn").value), vv = parseNum(vRaw);
+    const dOK = near(dv, dTrue, 1e-6);
+    if (dOK) hint("d", true, "✓ Distance correcte.");
+    else if (!Number.isFinite(dv)) hint("d", false, "Écris un nombre (virgule ou point acceptés).");
+    else if (near(dv, ABcm, 1e-6)) hint("d", false, "C’est la distance en centimètres. Convertis-la en mètres (1 m = 100 cm).");
+    else if (near(dv, ABcm * 10, 1e-6)) hint("d", false, "C’est la distance en millimètres. Il faut des mètres.");
+    else if (near(dv, ABcm / 1000, 1e-7)) hint("d", false, "Attention : 1 m = 100 cm, pas 1 000 cm.");
+    else if ([p.A, p.B, p.A/100, p.B/100].some(x => near(dv, x, 1e-6))) hint("d", false, "C’est la position d’un repère, pas la distance : d = position de B − position de A.");
+    else if (near(dv, (p.A + p.B) / 100, 1e-6)) hint("d", false, "On soustrait les positions : d = B − A.");
+    else hint("d", false, "Relis A et B sur la règle, calcule B − A, puis convertis en mètres.");
+    const vExact = dTrue / p.dt;
+    let vOK = false;
+    if (!Number.isFinite(vv)) hint("v", false, "Écris un nombre (virgule ou point acceptés).");
+    else if (near(vv, vExact, .0005 + 1e-9) && decimals(vRaw) <= 3){ vOK = true; hint("v", true, "✓ Vitesse correcte."); }
+    else if (near(vv, vExact, .0005 + 1e-9)) hint("v", false, "Presque ! Arrondis au millième : 3 chiffres après la virgule.");
+    else if (near(vv, p.dt / dTrue, .02 * p.dt / dTrue)) hint("v", false, "Tu as inversé : v = d ÷ Δt (la distance divisée par la durée).");
+    else if (near(vv, vExact * 100, vExact * 2)) hint("v", false, "Tu as utilisé d en centimètres : v est alors en cm/s. Utilise d en mètres.");
+    else if (!dOK && Number.isFinite(dv) && dv > 0 && near(vv, dv / p.dt, .0006)) hint("v", false, "Ton calcul d ÷ Δt est juste, mais avec une distance fausse : corrige d d’abord.");
+    else if (near(vv, vExact, .006)) hint("v", false, "Presque ! Vérifie l’arrondi au millième de m/s.");
+    else hint("v", false, `Applique v = d ÷ Δt avec d en mètres et Δt = ${fmt(p.dt,2)} s.`);
+    if (dOK && vOK) save(p, dTrue, vExact);
+  }
+  function nextSuggestion(p){
+    const L = p.B - p.A;
+    if (!successivePair() && p.B + L <= 19.5)
+      return ` Idée pour l’essai suivant : mesure l’intervalle <b>juste en dessous, de même longueur</b> (A = ${fmtCm(p.B)} cm, B = ${fmtCm(p.B + L)} cm). Fais glisser les étiquettes, puis reprends la pipette.`;
+    return " Pour l’essai suivant, déplace A et/ou B en faisant glisser leurs étiquettes, puis reprends la pipette.";
+  }
+  function save(p, d, vExact){
+    state.trials.push({A:p.A, B:p.B, d, dt:p.dt, v: Math.round(vExact * 1000) / 1000});
+    const n = state.trials.length, gap = Math.abs(p.dt - p.trueDt);
+    state.pending = null;
+    state.msg = {type:"ok", html:`Essai ${n} enregistré ✓ — durée réelle du passage : ${fmt(p.trueDt,2)} s, ton chrono : ${fmt(p.dt,2)} s.` +
+      (gap < .005 ? " Chronométrage parfait !" : ` L’écart de ${fmt(gap,2)} s vient de ton temps de réaction.`) +
+      (n < 3 ? nextSuggestion(p) : "")};
+    setTimeout(clearCalc, 900);
+    render(true);
+  }
+
+  // deux essais sur des intervalles successifs de même longueur ?
+  function successivePair(){
+    const T = state.trials;
+    for (let i = 0; i < T.length; i++) for (let j = 0; j < T.length; j++)
+      if (i !== j && T[i].B === T[j].A && Math.abs((T[i].B - T[i].A) - (T[j].B - T[j].A)) < 1e-9) return [i + 1, j + 1].sort((a, b) => a - b);
+    return null;
+  }
+  // ---------- Interface ----------
+  function currentStep(){
+    if (!(state.oil && state.ruler && markersReady())) return 1;
+    if (state.pending) return 3;
+    if (state.trials.length >= 3 && !falling() && !state.busy) return 4;
+    return 2;
+  }
+  function nextObject(){
+    if (state.busy || falling()) return null;
+    if (!state.oil) return bottle.el;
+    if (!state.ruler) return ruler.el;
+    if (!markersReady()) return pen.el;
+    if (!state.pending && state.trials.length < MAX_TRIALS && (!state.drop || state.drop.state === "settled")) return pip.el;
+    return null;
+  }
+  function updateReading(){
+    if (!state.marks){ $("reading").innerHTML = ""; return; }
+    if (state.marks === 1){ $("reading").innerHTML = `Lecture sur la règle : <b>A = ${fmtCm(state.A)} cm</b>`; return; }
+    const warn = state.A < 2 ? `<div class="msg warn" style="margin-top:6px">A est très près de la surface : juste après son entrée dans l’huile, la goutte n’a pas encore atteint une vitesse constante. Place A un peu plus bas.</div>` : "";
+    $("reading").innerHTML = `Lecture sur la règle : <b>A = ${fmtCm(state.A)} cm</b> · <b>B = ${fmtCm(state.B)} cm</b>` +
+      (markersLocked() ? " 🔒" : " — fais glisser les étiquettes pour les déplacer.") + warn;
+  }
+  function renderMsg(){ const m = state.msg; $("msg").innerHTML = m ? `<div class="msg ${m.type}">${m.html}</div>` : ""; }
+  const TITLES = {1:"Préparer le montage", 2:"Chronométrer la chute", 3:"Calculer la vitesse moyenne", 4:"Comparer et conclure"};
+  function render(newRow){
+    const step = currentStep();
+    document.querySelectorAll("#steps li").forEach(li => { const s = +li.dataset.s; li.className = s < step ? "done" : s === step ? "current" : ""; });
+    $("stepTitle").textContent = TITLES[step];
+    let html = "";
+    if (step === 1){
+      html = "<p>Prépare le montage en <b>faisant glisser le matériel</b> avec la souris ou le doigt&nbsp;:</p>" +
+        "<p>🫗 la bouteille d’huile au-dessus de l’éprouvette · 📏 la règle contre l’éprouvette · 🖊️ le marqueur sur l’éprouvette, à la hauteur choisie, pour tracer A puis B.</p>";
+    } else if (step === 2){
+      if (falling()) html = "<p>Observe le <b>centre</b> de la goutte : démarre le chrono quand il passe devant <b>A</b>, arrête-le quand il passe devant <b>B</b>.</p>";
+      else if (state.trials.length >= MAX_TRIALS) html = "<p>Tu as fait le nombre maximal d’essais.</p>";
+      else html = `<p>Prends la <b>pipette</b> dans le bécher de permanganate et fais-la glisser au-dessus de l’éprouvette pour déposer une goutte. Démarre le chrono quand le <b>centre</b> de la goutte passe devant A, arrête-le devant B.</p><p class="kbd">Le chrono se commande aussi avec la barre <kbd>Espace</kbd>. Le ralenti ×0,25 aide pour les premiers essais.</p>`;
+    } else if (step === 3){
+      html = "<p>Bonne mesure&nbsp;! Complète le calcul ci-dessous.</p>";
+    } else {
+      html = `<p>Tu as ${state.trials.length} essais. Compare les vitesses dans le tableau et réponds à la question.</p>` +
+        (state.trials.length < MAX_TRIALS ? `<p class="kbd">Tu peux faire d’autres essais (jusqu’à ${MAX_TRIALS}). Active la chronophotographie pour voir les positions de la goutte toutes les 0,5 s.</p>` : "");
+    }
+    $("consigneText").innerHTML = html;
+
+    // liste de contrôle
+    const done = {oil: state.oil, ruler: state.ruler, A: state.marks >= 1, B: state.marks >= 2};
+    const nxt = !state.oil ? "oil" : !state.ruler ? "ruler" : state.marks < 1 ? "A" : state.marks < 2 ? "B" : null;
+    document.querySelectorAll("#checklist li").forEach(li => { const k = li.dataset.k; li.className = done[k] ? "done" : k === nxt ? "next" : ""; });
+    $("checklist").hidden = step > 1;
+
+    // objet à manipuler ensuite : il « respire »
+    const nx = nextObject();
+    for (const o of [bottle, ruler, pen, pip]) o.el.classList.toggle("pulse", o.el === nx);
+    pip.el.classList.toggle("waiting", !(state.oil && markersReady()));
+
+    for (const k in markerEls) markerEls[k].g.classList.toggle("locked", !markersReady() || markersLocked());
+    updateReading();
+    renderMsg();
+
+    const go = $("goBtn");
+    go.textContent = state.chrono.running ? "■ Arrêter" : "▶ Démarrer";
+    go.classList.toggle("stop", state.chrono.running);
+    $("chrono").classList.toggle("running", state.chrono.running);
+    $("slowBtn").setAttribute("aria-pressed", state.slow);
+    $("ghostBtn").disabled = !state.lastDrop || falling();
+    $("retryBtn").disabled = state.busy || !(state.drop || state.pending || state.chrono.startAt !== null);
+    $("ghostBtn").setAttribute("aria-pressed", state.ghosts);
+
+    const p = state.pending;
+    $("calcLocked").hidden = !!p; $("calcBody").hidden = !p;
+    if (p) $("given").innerHTML = `<span class="chip">A = ${fmtCm(p.A)} cm</span><span class="chip">B = ${fmtCm(p.B)} cm</span><span class="chip">Δt = ${fmt(p.dt,2)} s</span>`;
+
+    const T = state.trials, rows = Math.max(3, T.length);
+    let tb = "";
+    for (let i = 0; i < rows; i++){
+      const t = T[i], cls = newRow && i === T.length - 1 ? ' class="new"' : "";
+      tb += t ? `<tr${cls}><th scope="row">${i+1}</th><td>${fmtCm(t.A)} → ${fmtCm(t.B)}</td><td>${fmt(t.d,3).replace(/0+$/,"").replace(/,$/,"")}</td><td>${fmt(t.dt,2)}</td><td><b>${fmt(t.v,3)}</b></td></tr>`
+              : `<tr><th scope="row">${i+1}</th><td>—</td><td>—</td><td>—</td><td>—</td></tr>`;
+    }
+    $("tbody").innerHTML = tb;
+    if (T.length >= 2){
+      const mean = T.reduce((s, t) => s + t.v, 0) / T.length;
+      $("tfoot").innerHTML = `<tr><td colspan="4">Vitesse moyenne des essais</td><td>${fmt(mean,3)}</td></tr>`;
+    } else $("tfoot").innerHTML = "";
+    $("summary").hidden = T.length < 3;
+    if (T.length >= 3){
+      const vs = T.map(t => t.v), mn = Math.min(...vs), mx = Math.max(...vs);
+      const succ = successivePair();
+      $("answer").innerHTML = `La durée augmente avec la distance AB, mais la vitesse moyenne reste à peu près la même (entre ${fmt(mn,3)} et ${fmt(mx,3)} m/s). ` +
+        (succ ? `Aux essais ${succ[0]} et ${succ[1]}, tu as mesuré deux intervalles <b>successifs de même longueur</b> et trouvé presque la même durée&nbsp;: la goutte parcourt des distances égales pendant des durées égales. ` 
+              : `Pour le vérifier proprement, mesure deux intervalles <b>successifs de même longueur</b> (par exemple 4 → 10 cm puis 10 → 16 cm)&nbsp;: si les durées sont presque égales, la goutte parcourt des distances égales pendant des durées égales. `) +
+        `Sa vitesse est donc constante et sa trajectoire est une droite verticale&nbsp;: dans le référentiel de l’éprouvette, son mouvement est <b>rectiligne uniforme</b>. Les petits écarts viennent du temps de réaction au chronomètre et de la taille des gouttes, qui n’est jamais exactement la même.`;
+      $("answer").hidden = !state.answer;
+      $("answerBtn").textContent = state.answer ? "Masquer la réponse" : "Afficher une réponse possible";
+    }
+  }
+
+  // ---------- Boucle principale ----------
+  let last = performance.now();
+  function loop(now){
+    const dt = Math.min(.05, (now - last) / 1000); last = now;
+    const ds = dt * (state.slow ? .25 : 1);
+    state.sim += ds;
+    updateDrop(ds);
+    $("chrono").textContent = fmt(chronoValue(), 2) + " s";
+    checkEvaluate();
+    requestAnimationFrame(loop);
+  }
+
+  // ---------- Événements ----------
+  $("goBtn").addEventListener("click", toggleChrono);
+  $("retryBtn").addEventListener("click", retry);
+  $("slowBtn").addEventListener("click", () => { state.slow = !state.slow; render(); });
+  $("ghostBtn").addEventListener("click", () => { state.ghosts = !state.ghosts; drawGhosts(); render(); });
+  $("calcForm").addEventListener("submit", check);
+  $("answerBtn").addEventListener("click", () => { state.answer = !state.answer; render(); });
+  $("resetBtn").addEventListener("click", () => { if (!state.trials.length || confirm("Effacer tous les essais et recommencer ?")) location.reload(); });
+  document.addEventListener("keydown", e => {
+    if (e.code !== "Space" || e.repeat) return;
+    const tg = e.target.tagName;
+    if (tg === "INPUT" || tg === "TEXTAREA") return;
+    e.preventDefault(); toggleChrono();
   });
-  button.addEventListener("click", event => {
-    if (!ignoreClick || !event.detail) return;
-    ignoreClick = false;
-    event.stopImmediatePropagation();
-  }, true);
-}
-function inVessel(x, y) {
-  const box = scene.querySelector(".tube").getBoundingClientRect();
-  return x >= box.left - 18 && x <= box.right + 18 && y >= box.top - 20 && y <= box.bottom;
-}
-enableDrag(oilBottle, (x,y) => {if (inVessel(x,y)) pourOil();});
-enableDrag(ruler, (x,y) => {
-  const box = scene.getBoundingClientRect();
-  if (x >= box.left && x <= box.left + box.width / 2 && y >= box.top && y <= box.bottom) placeRuler();
-});
-enableDrag(marker, (x,y) => {
-  const box = scale.getBoundingClientRect();
-  if (x < box.left - 18 || x > box.right + 18 || y < box.top - 8 || y > box.bottom + 8) return;
-  selectedTool = "marker";
-  markAt(Math.round((y - box.top) / box.height * depth / 2) * 2);
-});
-enableDrag(pipette, (x,y) => {if (inVessel(x,y)) releaseDrop();});
-renderResults();
-resetAttempt();
+
+  render();
+  requestAnimationFrame(loop);
+})();
 </script>
 </body>
 </html>
