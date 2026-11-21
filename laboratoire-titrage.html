@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Titrage acido-basique | Laboratoire virtuel</title>
+<style>
+  :root{
+    --ink:#172b42; --muted:#50647a; --line:#dce5ed; --blue:#174e77; --blue-d:#113b5b; --pale:#edf6fb;
+    --ok:#1d7f54; --bad:#b4400f; --bg:#f4f8fb;
+  }
+  *{box-sizing:border-box}
+  [hidden]{display:none!important}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.45}
+  .shell{max-width:1200px;margin:0 auto;padding:0 18px}
+  header.top{background:#fff;border-bottom:1px solid var(--line)}
+  .top-inner{display:flex;gap:12px;align-items:center;min-height:58px}
+  .mark{display:grid;place-items:center;width:32px;height:32px;border-radius:8px;background:var(--blue);color:#fff}
+  .course{margin-left:auto;color:var(--muted);font-size:.85rem}
+  h1{margin:18px 0 2px;font-size:clamp(1.7rem,3.6vw,2.4rem);letter-spacing:-.035em;line-height:1.1}
+  .problem{margin:0 0 14px;color:var(--muted)}
+  .phases{list-style:none;margin:0 0 14px;padding:0;display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+  .phases li{display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:10px;background:#fff;border:1px solid var(--line);color:var(--muted);font-size:.86rem;font-weight:650;transition:all .3s}
+  .phases li span{display:grid;place-items:center;width:24px;height:24px;border-radius:50%;background:#edf1f5;font-size:.75rem;flex:none}
+  .phases li.current{border-color:var(--blue);color:var(--blue);background:var(--pale)}
+  .phases li.current span{background:var(--blue);color:#fff}
+  .phases li.done{color:var(--ok)}
+  .phases li.done span{background:#e3f3ea;color:var(--ok)}
+  .workspace{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(300px,1fr);gap:16px;align-items:start;padding-bottom:30px}
+  .panel{background:#fff;border:1px solid var(--line);border-radius:16px}
+  .scene-card{position:sticky;top:10px;overflow:hidden}
+  #scene{display:block;width:100%;height:auto;max-height:calc(100vh - 150px);background:#fbfdfe;touch-action:none;user-select:none;-webkit-user-select:none}
+  .bar{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;padding:10px 14px;border-top:1px solid var(--line)}
+  .group{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:12px;padding:3px;gap:2px;background:#fff}
+  .group .lbl{font-size:.82rem;font-weight:650;color:var(--muted);padding:0 .5em 0 .4em}
+  .seg{font:inherit;font-size:.86rem;font-weight:650;border:0;background:transparent;color:var(--ink);border-radius:9px;padding:.48em .65em;cursor:pointer;transition:background .18s,color .18s}
+  .seg:hover:not(:disabled){background:var(--pale)}
+  .seg[aria-pressed="true"]{background:var(--blue);color:#fff}
+  .seg:disabled{opacity:.4;cursor:not-allowed}
+  .btn{font:inherit;font-weight:650;font-size:.9rem;border-radius:10px;border:1px solid var(--line);background:#fff;color:var(--blue);padding:.55em .9em;cursor:pointer;transition:background .18s,border-color .18s}
+  .btn:hover:not(:disabled){border-color:var(--blue);background:var(--pale)}
+  .btn:disabled{opacity:.42;cursor:not-allowed}
+  .btn.primary{background:var(--blue);border-color:var(--blue);color:#fff}
+  .btn.primary:hover:not(:disabled){background:var(--blue-d)}
+  .btn:focus-visible,.seg:focus-visible{outline:3px solid #7fb6d6;outline-offset:2px}
+  .side{padding:16px 18px;display:flex;flex-direction:column;gap:12px}
+  h2{margin:0;font-size:1.1rem}
+  .consigne p{margin:.3em 0}
+  .checklist{list-style:none;margin:0;padding:0;display:grid;gap:4px}
+  .checklist li{display:flex;align-items:center;gap:.55em;font-size:.9rem;padding:.38em .55em;border-radius:9px;color:var(--muted);transition:all .3s}
+  .checklist li::before{content:"";width:1em;height:1em;border-radius:50%;border:2px solid #b8c8d4;flex:none}
+  .checklist li.done{color:var(--ok);font-weight:650}
+  .checklist li.done::before{background:var(--ok) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 8.5l2.5 2.5L12 5.5' stroke='white' stroke-width='2.2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") center/100% no-repeat;border-color:var(--ok)}
+  .checklist li.next{background:var(--pale);color:var(--blue);font-weight:700}
+  .msg{padding:10px 12px;border-radius:10px;border-left:4px solid var(--blue);background:var(--pale);font-size:.93rem;animation:pop .3s ease}
+  .msg.ok{border-color:var(--ok);background:#e7f5ed}
+  .msg.bad{border-color:var(--bad);background:#fbeee6}
+  .msg.warn{border-color:#c48a0c;background:#fbf4e1}
+  @keyframes pop{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+  .data{display:flex;flex-wrap:wrap;gap:6px}
+  .chip{background:var(--pale);color:var(--blue);border-radius:999px;padding:.2em .7em;font-size:.85rem;font-weight:650;font-variant-numeric:tabular-nums}
+  .form label{display:block;font-weight:650;font-size:.9rem;margin-bottom:4px}
+  .form .row{display:flex;gap:8px;flex-wrap:wrap}
+  .form input{font:inherit;font-size:1.02rem;width:9em;padding:.5em .65em;border:1.5px solid var(--line);border-radius:9px;font-variant-numeric:tabular-nums}
+  .form input:focus{outline:none;border-color:var(--blue)}
+  .form input.good{border-color:var(--ok);background:#f1faf5}
+  .form input.wrong{border-color:var(--bad);background:#fdf5f0}
+  .hint{font-size:.84rem;color:var(--muted);margin-top:4px}
+  .formula{font-size:1.05rem;text-align:center;padding:8px;border-radius:10px;background:#f6f9fb;font-weight:650}
+  .safety{font-size:.84rem;color:var(--muted);border-top:1px solid var(--line);padding-top:10px}
+  table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:.9rem}
+  td,th{padding:.4em .3em;border-bottom:1px solid var(--line);text-align:left}
+  /* objets */
+  .obj{cursor:grab;outline:none}
+  .obj.dragging{cursor:grabbing}
+  .obj.locked{cursor:default}
+  .obj:focus-visible{filter:drop-shadow(0 0 4px #3f88ac)}
+  .obj.pulse{animation:glow 1.6s ease-in-out infinite}
+  @keyframes glow{0%,100%{filter:drop-shadow(0 0 0 rgba(23,78,119,0))}50%{filter:drop-shadow(0 0 7px rgba(40,130,190,.95))}}
+  .knob,.handle{cursor:pointer}
+  @media (max-width:900px){.workspace{grid-template-columns:1fr}.scene-card{position:static}#scene{max-height:none}.phases{grid-template-columns:repeat(2,1fr)}}
+  @media (max-width:460px){.course{display:none}.phases li{font-size:.76rem}}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="shell top-inner">
+    <span class="mark" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 3h6m-5 0v7l-5 8q-1 3 2 3h10q3 0 2-3l-5-8V3M8 15h8"/></svg></span>
+    <strong>Laboratoire virtuel</strong>
+    <span class="course">Chimie · Première Bac Pro ASSP</span>
+  </div>
+</header>
+
+<main class="shell">
+  <h1>Titrage acido-basique</h1>
+  <p class="problem">Comment déterminer expérimentalement la concentration d’une solution de soude&nbsp;?</p>
+  <ol class="phases" id="phases">
+    <li data-p="1"><span>1</span>Préparation du matériel</li>
+    <li data-p="2"><span>2</span>Titrage rapide</li>
+    <li data-p="3"><span>3</span>Titrage précis</li>
+    <li data-p="4"><span>4</span>Exploitation</li>
+  </ol>
+
+  <div class="workspace">
+    <section class="panel scene-card" aria-label="Paillasse">
+      <svg id="scene" viewBox="0 0 760 520" role="application" aria-label="Paillasse : fais glisser le matériel avec la souris ou le doigt. Au clavier : Tab pour choisir un objet, Entrée pour l’utiliser.">
+        <defs>
+          <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="1" fill="#e2ebf1"/></pattern>
+          <linearGradient id="steel"><stop stop-color="#73869a"/><stop offset=".45" stop-color="#eef3f6"/><stop offset="1" stop-color="#52677e"/></linearGradient>
+          <linearGradient id="glass"><stop stop-color="#b5dfea" stop-opacity=".55"/><stop offset=".45" stop-color="#fff" stop-opacity=".85"/><stop offset="1" stop-color="#91cbdc" stop-opacity=".55"/></linearGradient>
+          <linearGradient id="bench" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#e3eaef"/><stop offset="1" stop-color="#cfdae2"/></linearGradient>
+          <clipPath id="loupeClip"><circle cx="82" cy="100" r="60"/></clipPath>
+        </defs>
+        <rect width="760" height="520" fill="url(#grid)"/>
+        <!-- paillasse -->
+        <rect x="0" y="470" width="760" height="50" fill="url(#bench)"/>
+        <line x1="0" y1="470" x2="760" y2="470" stroke="#b7c6d1" stroke-width="1.5"/>
+        <!-- étagère -->
+        <rect x="425" y="200" width="270" height="8" rx="2" fill="#c9b18f" stroke="#a48b67"/>
+        <path d="M440,208 l12,26 M680,208 l-12,26" stroke="#a48b67" stroke-width="3"/>
+        <!-- support -->
+        <g fill="url(#steel)" stroke="#53677c" stroke-width="1.5">
+          <path d="M108,470 l18,-12 h108 l18,12 Z"/>
+          <rect x="168" y="30" width="12" height="430" rx="5"/>
+        </g>
+        <!-- zones cibles -->
+        <rect id="hl1" x="0" y="0" width="0" height="0" rx="10" fill="rgba(23,78,119,.07)" stroke="#174e77" stroke-width="1.5" stroke-dasharray="6 5" opacity="0" pointer-events="none"/>
+        <rect id="hl2" x="0" y="0" width="0" height="0" rx="10" fill="rgba(23,78,119,.07)" stroke="#174e77" stroke-width="1.5" stroke-dasharray="6 5" opacity="0" pointer-events="none"/>
+        <g id="items"></g>
+        <g id="fx" pointer-events="none"></g>
+        <!-- loupe -->
+        <g id="loupe" opacity="0" pointer-events="none">
+          <circle cx="82" cy="100" r="64" fill="#fff" stroke="#174e77" stroke-width="3"/>
+          <g clip-path="url(#loupeClip)"><g id="loupeIn"></g></g>
+          <circle cx="82" cy="100" r="60" fill="none" stroke="#dce5ed"/>
+          <text x="82" y="183" text-anchor="middle" font-size="10.5" font-weight="700" fill="#174e77">🔍 loupe sur la burette</text>
+        </g>
+      </svg>
+      <div class="bar">
+        <div class="group" role="group" aria-label="Robinet de la burette">
+          <span class="lbl">Robinet</span>
+          <button class="seg tap" data-tap="closed" type="button">Fermé</button>
+          <button class="seg tap" data-tap="drop" type="button">Goutte à goutte</button>
+          <button class="seg tap" data-tap="open" type="button">Ouvert</button>
+        </div>
+        <button class="btn" id="oneDrop" type="button">+ 1 goutte</button>
+        <div class="group" role="group" aria-label="Agitateur magnétique">
+          <span class="lbl">Agitateur</span>
+          <button class="seg" id="stirBtn" type="button" aria-pressed="false">Marche</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel side" aria-live="polite">
+      <div class="consigne">
+        <h2 id="title">Préparation du matériel</h2>
+        <div id="text"></div>
+      </div>
+      <ul class="checklist" id="checklist"></ul>
+      <div id="msg"></div>
+
+      <div class="form" id="form2" hidden>
+        <label for="v1">Volume versé au moment du virage, V₁ (mL)</label>
+        <div class="row"><input id="v1" type="text" inputmode="decimal" placeholder="ex. 10,5"><button class="btn primary" id="ok2" type="button">Valider</button></div>
+        <div class="hint">Lis la burette dans la loupe : bas du ménisque, au 0,05 mL près.</div>
+      </div>
+      <button class="btn primary" id="go3" type="button" hidden>Passer au titrage précis →</button>
+
+      <div class="form" id="form3" hidden>
+        <label for="ve">Volume à l’équivalence, V<sub>E</sub> (mL)</label>
+        <div class="row"><input id="ve" type="text" inputmode="decimal" placeholder="ex. 10,45"><button class="btn primary" id="ok3" type="button">Valider</button></div>
+        <div class="hint">Lis la burette au moment où la teinte verte apparaît.</div>
+      </div>
+      <button class="btn" id="redo3" type="button" hidden>↺ Nouveau bécher pour refaire le titrage précis</button>
+
+      <div class="form" id="form4" hidden>
+        <div class="formula">C<sub>A</sub> × V<sub>E</sub> = C<sub>B</sub> × V<sub>B</sub> &nbsp;⇒&nbsp; C<sub>B</sub> = C<sub>A</sub> × V<sub>E</sub> ÷ V<sub>B</sub></div>
+        <div class="data" id="data4" style="margin:10px 0"></div>
+        <label for="cb">Concentration de la soude, C<sub>B</sub> (mol/L)</label>
+        <div class="row"><input id="cb" type="text" inputmode="decimal" placeholder="ex. 0,100"><button class="btn primary" id="ok4" type="button">Vérifier</button></div>
+        <div class="hint">Arrondis à 3 chiffres significatifs (exemple : 0,104).</div>
+      </div>
+      <div id="final" hidden></div>
+
+      <div class="data" id="dataBox">
+        <span class="chip">Burette : HCl, C<sub>A</sub> = 0,100 mol/L</span>
+        <span class="chip">Bécher : soude, V<sub>B</sub> = 10,0 mL</span>
+      </div>
+      <p class="safety">⚠️ Blouse, lunettes et gants : l’acide chlorhydrique et la soude sont corrosifs. On ne pipette jamais à la bouche.</p>
+      <button class="btn" id="resetBtn" type="button">↺ Recommencer le TP</button>
+    </section>
+  </div>
+</main>
+
+<script>
+(() => {
+  "use strict";
+  const NS = "http://www.w3.org/2000/svg";
+  const $ = id => document.getElementById(id);
+  const svg = $("scene");
+  const RM = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const fmt = (x, n) => x.toFixed(n).replace(".", ",");
+  const lerp = (a, b, p) => a + (b - a) * p;
+  const ease = p => p < .5 ? 2*p*p : 1 - Math.pow(-2*p + 2, 2) / 2;
+  function tween(ms, fn, e = ease){
+    if (RM) ms = Math.min(ms, 120);
+    return new Promise(res => { const t0 = performance.now();
+      const st = now => { const p = Math.min(1, (now - t0) / ms); fn(e(p)); p < 1 ? requestAnimationFrame(st) : res(); };
+      requestAnimationFrame(st); });
+  }
+  const attr = (el, o) => { for (const k in o) el.setAttribute(k, o[k]); return el; };
+  const mk = (tag, o, parent) => { const el = attr(document.createElementNS(NS, tag), o); if (parent) parent.appendChild(el); return el; };
+  function svgPoint(e){ const p = svg.createSVGPoint(); p.x = e.clientX; p.y = e.clientY; return p.matrixTransform(svg.getScreenCTM().inverse()); }
+
+  // ---------- Géométrie du montage ----------
+  const ROD_X = 174, NOIX_Y = 120;     // noix fixée sur la tige
+  const BUR_X = 296, BUR_Y = 60;       // haut de la burette installée
+  const TIP_Y = BUR_Y + 318;           // pointe de la burette
+  const STIR_Y = 430;                  // dessus de l’agitateur placé
+  const BENCH = 470;
+  const GRAD0 = 20, PX_ML = 10;        // graduation 0 et 10 px par mL sur la burette
+
+  // ---------- État ----------
+  const VEQ = Math.round((9 + Math.random() * 3) / .05) * .05;   // mL, multiple d’une goutte (0,05 mL)
+  const S = {
+    phase:1, pince:false, burette:false, filled:false, read:25, tap:"open",
+    stirPlaced:false, stirOn:false, propOnPip:false, pipFull:false, busy:false,
+    beaker:{x:640, y:BENCH, onStir:false, soude:0, water:0, bbt:false, barreau:false},
+    color:"none", flash:0, barAngle:0, dropT:0, V1:null, VE:null, done:false, msg:null
+  };
+
+  // ---------- Dessins des objets ----------
+  const PIP = "M-3,0 L3,0 L3,64 C10,68 11,76 11,92 C11,108 10,116 3,120 L3,160 L1,178 L-1,178 L-3,160 L-3,120 C-10,116 -11,108 -11,92 C-11,76 -10,68 -3,64 Z";
+  const PROP = `<rect x="-3" y="-8" width="6" height="8" fill="#a5473b"/><ellipse cx="0" cy="-24" rx="11" ry="16" fill="#e8806f" stroke="#a5473b"/><circle cx="0" cy="-31" r="3" fill="#a5473b"/><circle cx="-6" cy="-18" r="2.4" fill="#a5473b"/><circle cx="6" cy="-18" r="2.4" fill="#a5473b"/>`;
+  const bottle = (label, sub, cap, liquid) => `
+    <rect x="-24" y="-76" width="48" height="78" fill="transparent"/>
+    <path d="M-20,-50 q0,-6 6,-6 h28 q6,0 6,6 v46 q0,4 -4,4 h-32 q-4,0 -4,-4z" fill="#eef8fb" stroke="#527984" stroke-width="1.3"/>
+    <rect x="-17" y="-36" width="34" height="32" rx="2" fill="${liquid}" opacity=".75"/>
+    <rect x="-8" y="-70" width="16" height="15" fill="#eef8fb" stroke="#527984" stroke-width="1.3"/>
+    <rect x="-9" y="-74" width="18" height="5" rx="1.5" fill="${cap}"/>
+    <rect x="-15" y="-48" width="30" height="20" rx="2" fill="#fff" stroke="#c9d6df"/>
+    <text x="0" y="-38.5" font-size="8.5" font-weight="800" text-anchor="middle" fill="#233650">${label}</text>
+    <text x="0" y="-31" font-size="5.5" text-anchor="middle" fill="#50647a">${sub}</text>`;
+  let burTicks = "";
+  for (let v = 0; v <= 25; v++){
+    const y = GRAD0 + v * PX_ML, big = v % 5 === 0;
+    burTicks += `<line x1="-8" x2="${big ? 1 : -3}" y1="${y}" y2="${y}" stroke="#2c4f66" stroke-width="${big ? 1 : .6}"/>`;
+    if (big) burTicks += `<text x="12" y="${y + 3}" font-size="9" fill="#34536b">${v}</text>`;
+  }
+  const DRAW = {
+    pince: `<rect x="-40" y="-16" width="185" height="32" fill="transparent"/>
+      <rect x="-24" y="-4" width="12" height="8" rx="2" fill="#53677c"/>
+      <rect x="-12" y="-11" width="24" height="22" rx="4" fill="url(#steel)" stroke="#53677c" stroke-width="1.4"/>
+      <circle r="3.5" fill="#53677c"/>
+      <rect x="12" y="-4" width="96" height="8" rx="3" fill="url(#steel)" stroke="#53677c" stroke-width="1.2"/>
+      <path d="M106,-11 h22 q4,0 4,4 v14 q0,4 -4,4 h-22 q-6,-11 0,-22z" fill="url(#steel)" stroke="#53677c" stroke-width="1.2"/>`,
+    burette: `<rect x="-22" y="-6" width="44" height="330" fill="transparent"/>
+      <rect x="-8" y="0" width="16" height="282" rx="3" fill="url(#glass)" stroke="#527f90" stroke-width="1.3"/>
+      <rect id="burLiq" x="-6.5" y="280" width="13" height="0" fill="#bfe6f3"/>
+      ${burTicks}
+      <path d="M-4,292 L4,292 L1.6,318 L-1.6,318 Z" fill="url(#glass)" stroke="#527f90"/>
+      <path id="burTip" d="M-2.8,292 L2.8,292 L1,316 L-1,316 Z" fill="#bfe6f3" opacity="0"/>
+      <rect x="-13" y="280" width="26" height="12" rx="3" fill="url(#steel)" stroke="#53677c"/>
+      <g class="handle" id="burHandle" transform="translate(0,286)"><rect x="-14" y="-14" width="28" height="28" fill="transparent"/><rect id="handleRect" x="-3.5" y="-13" width="7" height="26" rx="3" fill="#a34e49" stroke="#7d3a36"/></g>`,
+    hcl: bottle("HCl", "0,100 mol/L", "#286584", "#d8eef6"),
+    naoh: bottle("NaOH", "soude · C = ?", "#a65045", "#e7f2f6"),
+    bbt: `<rect x="-16" y="-66" width="32" height="68" fill="transparent"/>
+      <rect x="-11" y="-36" width="22" height="36" rx="4" fill="#e3efd8" stroke="#527984"/>
+      <rect x="-9" y="-22" width="18" height="20" rx="2" fill="#88b04e" opacity=".75"/>
+      <rect x="-4" y="-46" width="8" height="10" fill="#eef3f5" stroke="#527984"/>
+      <ellipse cx="0" cy="-53" rx="6" ry="8" fill="#2f3a44"/>
+      <text x="0" y="-26" font-size="7" font-weight="800" text-anchor="middle" fill="#233650">BBT</text>`,
+    pissette: `<rect x="-20" y="-66" width="44" height="68" fill="transparent"/>
+      <path d="M-15,-44 q0,-4 4,-4 h22 q4,0 4,4 v40 q0,4 -4,4 h-22 q-4,0 -4,-4z" fill="#eef7fb" stroke="#527984"/>
+      <rect x="-13" y="-30" width="26" height="26" fill="#d6eef7"/>
+      <path d="M-3,-48 v-8 q0,-6 6,-6 h6 l10,10" fill="none" stroke="#2484a1" stroke-width="2.2"/>
+      <text x="0" y="-15" font-size="6.5" font-weight="700" text-anchor="middle" fill="#233650">eau dist.</text>`,
+    propipette: `<rect x="-16" y="-44" width="32" height="46" fill="transparent"/>${PROP}`,
+    barreau: `<rect x="-17" y="-12" width="34" height="20" fill="transparent"/>
+      <ellipse cx="0" cy="2" rx="14" ry="4" fill="#eef4f7" stroke="#9fb3bf"/>
+      <rect x="-8" y="-4" width="16" height="5" rx="2.5" fill="#fff" stroke="#8a9aa6"/>`,
+    pipette: `<rect x="-15" y="-46" width="30" height="228" fill="transparent"/>
+      <clipPath id="pipClip"><path d="${PIP}"/></clipPath>
+      <g clip-path="url(#pipClip)"><rect id="pipLiq" x="-12" y="178" width="24" height="0" fill="#cfe7f1"/></g>
+      <path d="${PIP}" fill="url(#glass)" stroke="#478395" stroke-width="1.2"/>
+      <line x1="-6" x2="6" y1="30" y2="30" stroke="#174e77" stroke-width="1.4"/>
+      <text x="0" y="95" font-size="6.5" text-anchor="middle" fill="#174e77" font-weight="800">10 mL</text>
+      <g id="pipProp" opacity="0">${PROP}</g>`,
+    stirrer: `<path d="M-55,4 q0,-4 4,-4 h102 q4,0 4,4 v32 q0,4 -4,4 h-102 q-4,0 -4,-4z" fill="url(#steel)" stroke="#53677c" stroke-width="1.4"/>
+      <rect x="-48" y="-3" width="96" height="6" rx="3" fill="#e6edf1" stroke="#53677c"/>
+      <circle id="stirLed" cx="-38" cy="23" r="4" fill="#7c8b96"/>
+      <g class="knob" id="stirKnob"><circle cx="34" cy="22" r="9" fill="#296780" stroke="#1d4c5f"/><line id="knobLine" x1="34" y1="22" x2="34" y2="15" stroke="#fff" stroke-width="2"/></g>
+      <text x="-6" y="32" font-size="6.5" text-anchor="middle" fill="#2c3e50" font-weight="700">AGITATEUR</text>`,
+    beaker: `<rect x="-42" y="-72" width="84" height="76" fill="transparent"/>
+      <clipPath id="bkClip"><path d="M-32,-64 L-31,-4 Q-31,-2 -29,-2 L29,-2 Q31,-2 31,-4 L32,-64 Z"/></clipPath>
+      <g clip-path="url(#bkClip)">
+        <rect id="bkLiq" x="-34" y="-2" width="68" height="0" fill="#e8f4f8"/>
+        <ellipse id="bkFlash" cx="0" cy="-10" rx="14" ry="4" fill="#e3c832" opacity="0"/>
+        <rect id="bkBar" x="-8" y="-7.5" width="16" height="4.5" rx="2.2" fill="#fff" stroke="#8a9aa6" opacity="0"/>
+      </g>
+      <path d="M-38,-66 q3,0 4,2 L-32,-64 L-31,-4 Q-31,0 -27,0 L27,0 Q31,0 31,-4 L32,-64 L34,-66" fill="rgba(220,240,247,.3)" stroke="#527f90" stroke-width="1.5"/>
+      <path d="M-28,-50 h8 M-28,-40 h5 M-28,-30 h8 M-28,-20 h5" stroke="#527f90"/>
+      <text x="8" y="-52" font-size="7" fill="#34536b">100 mL</text>`
+  };
+  const LABEL = {pince:"Pince et noix", burette:"Burette graduée de 25 mL", hcl:"Acide chlorhydrique", naoh:"Soude", bbt:"Bleu de bromothymol", pissette:"Pissette d’eau distillée", propipette:"Propipette", barreau:"Barreau aimanté", pipette:"Pipette jaugée de 10,0 mL", stirrer:"Agitateur magnétique", beaker:"Bécher de 100 mL"};
+  const HOME = {pince:{x:330,y:452}, burette:{x:735,y:148}, hcl:{x:490,y:200}, naoh:{x:545,y:200}, bbt:{x:592,y:200}, pissette:{x:632,y:200}, propipette:{x:672,y:200}, barreau:{x:448,y:196}, pipette:{x:700,y:288}, stirrer:{x:525,y:430}, beaker:{x:640,y:BENCH}};
+  const ORDER = ["stirrer","pince","beaker","burette","pipette","hcl","naoh","bbt","pissette","propipette","barreau"];
+
+  const IT = {};
+  for (const n of ORDER){
+    const g = mk("g", {class:"obj", tabindex:0, role:"button", "aria-label":LABEL[n]}, $("items"));
+    g.innerHTML = DRAW[n];
+    IT[n] = {el:g, pos:{...HOME[n], a:0}, name:n};
+    place(n, HOME[n].x, HOME[n].y);
+  }
+  function place(n, x, y, a = 0){
+    const it = IT[n]; it.pos = {x, y, a};
+    it.el.setAttribute("transform", `translate(${x},${y})` + (a ? ` rotate(${a})` : ""));
+    if (n === "beaker"){ S.beaker.x = x; S.beaker.y = y; }
+  }
+  async function goHome(n, ms = 420, to = HOME[n]){
+    const {x, y, a} = IT[n].pos;
+    await tween(ms, p => place(n, lerp(x, to.x, p), lerp(y, to.y, p), lerp(a || 0, 0, p)));
+  }
+  function hl(id, r, active){
+    const el = $(id);
+    if (!r){ el.setAttribute("opacity", 0); return; }
+    attr(el, {x:r[0], y:r[1], width:r[2], height:r[3], opacity: active ? 1 : .45});
+  }
+  const say = (type, html) => { S.msg = {type, html}; renderMsg(); };
+  const near = (x, y, r) => x > r[0] && x < r[0] + r[2] && y > r[1] && y < r[1] + r[3];
+  const beakerRect = (m = 0) => [S.beaker.x - 36 - m, S.beaker.y - 70 - m, 72 + 2*m, 72 + 2*m];
+  const underBurette = () => S.burette && S.stirPlaced && S.beaker.onStir;
+
+  // ---------- Glisser-déposer ----------
+  function draggable(n, o){
+    const el = IT[n].el; let drag = null;
+    el.addEventListener("pointerdown", e => {
+      if (e.button > 0 || e.target.closest(".handle, .knob") && o.locked && o.locked()) return;
+      if (S.busy){ return; }
+      if (o.locked && o.locked()){ o.denied && o.denied(); return; }
+      e.preventDefault();
+      el.parentNode.appendChild(el); el.setPointerCapture(e.pointerId);
+      const p = svgPoint(e), s = IT[n].pos;
+      drag = {dx: s.x - p.x, dy: s.y - p.y};
+      el.classList.add("dragging"); el.classList.remove("pulse");
+      o.start && o.start();
+    });
+    el.addEventListener("pointermove", e => {
+      if (!drag) return;
+      const p = svgPoint(e);
+      place(n, Math.min(Math.max(p.x + drag.dx, 10), 750), Math.min(Math.max(p.y + drag.dy, 10), 510));
+      o.move && o.move(IT[n].pos);
+    });
+    const end = () => { if (!drag) return; drag = null; el.classList.remove("dragging"); hl("hl1"); hl("hl2"); o.drop(IT[n].pos); };
+    el.addEventListener("pointerup", end); el.addEventListener("pointercancel", end);
+    el.addEventListener("keydown", e => {
+      if (e.key !== "Enter" || S.busy) return;
+      e.preventDefault();
+      if (o.locked && o.locked()){ o.denied && o.denied(); return; }
+      o.key && o.key();
+    });
+  }
+  const titrating = () => S.phase >= 2;
+  const lockedMsg = () => say("info", "Le montage est prêt : on ne le déplace plus pendant le titrage.");
+
+  // pince + noix
+  const R_ROD = [148, 60, 52, 260];
+  draggable("pince", {
+    locked: () => S.pince, denied: () => {},
+    start: () => hl("hl1", R_ROD), move: p => hl("hl1", R_ROD, near(p.x, p.y, R_ROD)),
+    drop: async p => { if (near(p.x, p.y, R_ROD)) return fixPince(); say("info", "Fixe la noix sur la <b>tige du support</b> (zone en pointillés)."); goHome("pince"); },
+    key: () => fixPince()
+  });
+  async function fixPince(){
+    S.busy = true; await goHome("pince", 300, {x:ROD_X, y:NOIX_Y});
+    S.pince = true; S.busy = false; IT.pince.el.classList.add("locked");
+    say("ok", "La noix est serrée sur la tige et la pince est fixée."); render();
+  }
+
+  // burette
+  const R_JAW = [272, 30, 48, 120];
+  draggable("burette", {
+    locked: () => S.burette, denied: () => {},
+    start: () => hl("hl1", R_JAW), move: p => hl("hl1", R_JAW, near(p.x, p.y, R_JAW)),
+    drop: p => {
+      if (!near(p.x, p.y, R_JAW)){ say("info", "Place le haut de la burette dans la <b>pince</b> (zone en pointillés)."); return goHome("burette"); }
+      if (!S.pince){ say("warn", "Fixe d’abord la pince et la noix sur le support : sinon la burette n’a rien pour la tenir."); return goHome("burette"); }
+      installBurette();
+    },
+    key: () => S.pince ? installBurette() : say("warn", "Fixe d’abord la pince et la noix.")
+  });
+  async function installBurette(){
+    S.busy = true; await goHome("burette", 300, {x:BUR_X, y:BUR_Y});
+    S.burette = true; S.busy = false; IT.burette.el.classList.add("locked");
+    say("ok", "Burette installée verticalement dans la pince." + (S.tap !== "closed" ? " Attention : son robinet est <b>ouvert</b>." : "")); render();
+  }
+  // robinet (clic sur la poignée)
+  $("burHandle").addEventListener("pointerdown", e => { if (S.burette){ e.stopPropagation(); } });
+  $("burHandle").addEventListener("click", () => { if (S.burette) setTap(S.tap === "closed" ? "open" : "closed"); });
+
+  // acide chlorhydrique → burette
+  const R_TOP = [258, 0, 76, 110];
+  draggable("hcl", {
+    locked: () => S.filled, denied: () => say("info", "La burette est déjà remplie."),
+    start: () => hl("hl1", R_TOP), move: p => hl("hl1", R_TOP, near(p.x, p.y - 70, R_TOP)),
+    drop: p => {
+      if (near(p.x, p.y - 70, R_TOP)){
+        if (!S.burette){ say("warn", "Installe d’abord la burette dans la pince."); return goHome("hcl"); }
+        if (S.tap !== "closed"){ say("bad", "Ferme le robinet de la burette avant de la remplir, sinon l’acide s’écoule sur la paillasse ! (clique sur la poignée rouge ou sur « Fermé »)"); return goHome("hcl"); }
+        return fillBurette();
+      }
+      if (near(p.x, p.y - 70, beakerRect(10))) say("warn", "L’acide chlorhydrique est la solution <b>titrante</b> : il va dans la burette, pas dans le bécher.");
+      else say("info", "Amène le goulot du flacon <b>au-dessus de la burette</b> (zone en pointillés).");
+      goHome("hcl");
+    },
+    key: () => { if (!S.burette) return say("warn", "Installe d’abord la burette."); if (S.tap !== "closed") return say("bad", "Ferme d’abord le robinet."); fillBurette(); }
+  });
+  async function fillBurette(){
+    S.busy = true; render();
+    const {x, y} = IT.hcl.pos;
+    await tween(500, p => place("hcl", lerp(x, BUR_X + 66, p), lerp(y, BUR_Y - 30, p), -115 * p));
+    const s = mk("line", {x1:BUR_X + 2, x2:BUR_X + 2, y1:BUR_Y - 2, y2:BUR_Y + 6, stroke:"#bfe6f3", "stroke-width":3}, $("fx"));
+    S.filled = true;
+    await tween(1500, p => { S.read = lerp(25, -1.2, p); drawBurette(); }, p => p);
+    s.remove();
+    await goHome("hcl", 500);
+    await tween(500, p => { S.read = lerp(-1.2, 0, p); drawBurette(); });
+    S.read = 0; drawBurette();
+    IT.hcl.el.classList.add("locked"); IT.hcl.el.style.opacity = .55;
+    S.busy = false;
+    say("ok", "Burette remplie d’acide chlorhydrique, puis <b>zéro ajusté</b> : le bas du ménisque est sur la graduation 0 (on a fait couler l’excès dans un bécher poubelle, sans laisser de bulle d’air dans la pointe).");
+    render();
+  }
+
+  // agitateur
+  const R_STIR = [236, 410, 120, 70];
+  draggable("stirrer", {
+    locked: () => S.stirPlaced || titrating(), denied: () => S.stirPlaced && !titrating() ? say("info", "L’agitateur est en place sous la burette.") : lockedMsg(),
+    start: () => hl("hl1", R_STIR), move: p => hl("hl1", R_STIR, near(p.x, p.y + 20, R_STIR)),
+    drop: p => { if (near(p.x, p.y + 20, R_STIR)) return placeStirrer(); say("info", "Place l’agitateur <b>sous le robinet</b> de la burette."); goHome("stirrer"); },
+    key: () => placeStirrer()
+  });
+  async function placeStirrer(){
+    if (Math.abs(S.beaker.x - BUR_X) < 70 && S.beaker.y === BENCH){ await goHome("beaker", 300); }
+    S.busy = true; await goHome("stirrer", 300, {x:BUR_X, y:STIR_Y});
+    S.stirPlaced = true; S.busy = false; IT.stirrer.el.classList.add("locked");
+    say("ok", "Agitateur magnétique placé sous la burette."); render();
+  }
+  $("stirKnob").addEventListener("pointerdown", e => { if (S.stirPlaced) e.stopPropagation(); });
+  $("stirKnob").addEventListener("click", () => { if (S.stirPlaced) toggleStir(); });
+
+  // bécher
+  draggable("beaker", {
+    locked: () => titrating(), denied: lockedMsg,
+    start: () => S.stirPlaced && hl("hl1", [258, 360, 76, 74]),
+    move: p => S.stirPlaced && hl("hl1", [258, 360, 76, 74], Math.abs(p.x - BUR_X) < 50 && p.y > 380 && p.y < 470),
+    drop: async p => {
+      if (S.stirPlaced && Math.abs(p.x - BUR_X) < 50 && p.y > 380 && p.y < 475){
+        S.busy = true; await goHome("beaker", 250, {x:BUR_X, y:STIR_Y}); S.busy = false;
+        S.beaker.onStir = true; say("ok", "Bécher posé sur l’agitateur, sous la pointe de la burette."); return render();
+      }
+      S.beaker.onStir = false;
+      if (p.y > 400){                                    // posé ailleurs sur la paillasse
+        let x = p.x;
+        if (Math.abs(x - ROD_X) < 90) x = ROD_X + (x < ROD_X ? -90 : 90);
+        S.busy = true; await goHome("beaker", 200, {x: Math.min(Math.max(x, 45), 660), y:BENCH}); S.busy = false;
+        return render();
+      }
+      S.busy = true; await goHome("beaker", 400); S.busy = false; render();
+    },
+    key: async () => { if (S.stirPlaced){ await goHome("beaker", 300, {x:BUR_X, y:STIR_Y}); S.beaker.onStir = true; render(); } else say("info", "Place d’abord l’agitateur sous la burette."); }
+  });
+
+  // propipette → pipette
+  const pipTop = () => [IT.pipette.pos.x - 24, IT.pipette.pos.y - 45, 48, 85];
+  draggable("propipette", {
+    locked: () => S.propOnPip, denied: () => {},
+    start: () => hl("hl1", pipTop()), move: p => hl("hl1", pipTop(), near(p.x, p.y, pipTop())),
+    drop: async p => {
+      if (near(p.x, p.y, pipTop())){ attachProp(); return; }
+      say("info", "Emboîte la propipette <b>en haut de la pipette jaugée</b>."); goHome("propipette");
+    },
+    key: () => attachProp()
+  });
+  async function attachProp(){
+    S.busy = true; await goHome("propipette", 250, {x:IT.pipette.pos.x, y:IT.pipette.pos.y});
+    IT.propipette.el.style.display = "none"; $("pipProp").setAttribute("opacity", 1);
+    S.propOnPip = true; S.busy = false; say("ok", "Propipette emboîtée sur la pipette jaugée."); render();
+  }
+
+  // pipette jaugée
+  const NAOH_MOUTH = [HOME.naoh.x - 24, HOME.naoh.y - 100, 48, 102];
+  const HCL_MOUTH = [HOME.hcl.x - 24, HOME.hcl.y - 100, 48, 102];
+  draggable("pipette", {
+    locked: () => titrating(), denied: lockedMsg,
+    start: () => { hl("hl1", S.pipFull ? beakerRect() : NAOH_MOUTH); },
+    move: p => { const tx = p.x, ty = p.y + 178; hl("hl1", S.pipFull ? beakerRect() : NAOH_MOUTH, near(tx, ty, S.pipFull ? beakerRect() : NAOH_MOUTH)); },
+    drop: p => {
+      const tx = p.x, ty = p.y + 178;
+      if (near(tx, ty, NAOH_MOUTH)){
+        if (!S.propOnPip){ say("bad", "On ne pipette <b>jamais à la bouche</b> : emboîte d’abord la propipette sur la pipette."); return goHome("pipette"); }
+        if (S.pipFull){ say("info", "La pipette est déjà pleine : verse-la dans le bécher."); return goHome("pipette"); }
+        if (S.beaker.soude > 0){ say("info", "Le bécher contient déjà 10,0 mL de soude."); return goHome("pipette"); }
+        return fillPipette();
+      }
+      if (near(tx, ty, HCL_MOUTH)){ say("warn", "C’est la <b>soude</b> qu’il faut prélever (solution titrée), pas l’acide."); return goHome("pipette"); }
+      if (near(tx, ty, beakerRect(8))){
+        if (!S.pipFull){ say("info", "La pipette est vide : prélève d’abord 10,0 mL de soude dans le flacon."); return goHome("pipette"); }
+        return emptyPipette();
+      }
+      say("info", S.pipFull ? "Amène la <b>pointe</b> de la pipette dans le bécher." : "Plonge la <b>pointe</b> de la pipette dans le flacon de soude.");
+      goHome("pipette");
+    },
+    key: () => { if (!S.propOnPip) return say("bad", "Emboîte d’abord la propipette."); S.pipFull ? emptyPipette() : (S.beaker.soude ? say("info", "Le bécher contient déjà la soude.") : fillPipette()); }
+  });
+  const setPipLiq = top => attr($("pipLiq"), {y: top, height: 178 - top});
+  async function fillPipette(){
+    S.busy = true; render();
+    const {x, y} = IT.pipette.pos;
+    await tween(350, p => place("pipette", lerp(x, HOME.naoh.x, p), lerp(y, HOME.naoh.y - 12 - 178, p)));
+    await tween(900, p => setPipLiq(lerp(178, 18, p)));
+    await tween(500, p => setPipLiq(lerp(18, 30, p)));
+    S.pipFull = true;
+    await goHome("pipette", 450);
+    S.busy = false;
+    say("ok", "Soude aspirée au-dessus du trait de jauge, puis <b>ajustée au trait</b> : la pipette contient exactement 10,0 mL.");
+    render();
+  }
+  async function emptyPipette(){
+    S.busy = true; render();
+    const {x, y} = IT.pipette.pos, b = S.beaker;
+    await tween(350, p => place("pipette", lerp(x, b.x - 18, p), lerp(y, b.y - 40 - 178, p)));
+    await tween(1300, p => { setPipLiq(lerp(30, 178, p)); b.soude = 10 * p; drawBeaker(); }, p => p);
+    b.soude = 10; S.pipFull = false;
+    await goHome("pipette", 450);
+    S.busy = false;
+    say("ok", "10,0 mL de soude versés dans le bécher (pointe contre la paroi, on laisse s’écouler sans souffler).");
+    render();
+  }
+
+  // BBT
+  draggable("bbt", {
+    locked: () => S.beaker.bbt, denied: () => say("info", "Quelques gouttes de BBT suffisent : c’est déjà fait."),
+    start: () => hl("hl1", beakerRect()), move: p => hl("hl1", beakerRect(), near(p.x, p.y, beakerRect(14))),
+    drop: p => near(p.x, p.y, beakerRect(14)) ? addBBT() : goHome("bbt"),
+    key: () => addBBT()
+  });
+  async function addBBT(){
+    S.busy = true; render();
+    const {x, y} = IT.bbt.pos, b = S.beaker;
+    await tween(400, p => place("bbt", lerp(x, b.x, p), lerp(y, b.y - 132, p), 180 * p));
+    for (let i = 0; i < 3; i++){
+      const d = mk("circle", {cx:b.x, cy:b.y - 76, r:2.6, fill:"#4f8f3a"}, $("fx"));
+      await tween(260, p => d.setAttribute("cy", lerp(b.y - 76, b.y - 8, p)), p => p*p);
+      d.remove();
+      if (i === 0){ b.bbt = true; drawBeaker(); }
+    }
+    await goHome("bbt", 400);
+    S.busy = false; IT.bbt.el.style.opacity = .6;
+    say("ok", b.soude ? "Quelques gouttes de BBT ajoutées : en milieu basique (soude), l’indicateur est <b>bleu</b>." : "Quelques gouttes de BBT ajoutées dans le bécher.");
+    render();
+  }
+
+  // barreau aimanté
+  draggable("barreau", {
+    locked: () => S.beaker.barreau, denied: () => {},
+    start: () => hl("hl1", beakerRect()), move: p => hl("hl1", beakerRect(), near(p.x, p.y, beakerRect(6))),
+    drop: p => near(p.x, p.y, beakerRect(6)) ? addBar() : goHome("barreau"),
+    key: () => addBar()
+  });
+  async function addBar(){
+    S.busy = true; const b = S.beaker, {x, y} = IT.barreau.pos;
+    await tween(300, p => place("barreau", lerp(x, b.x, p), lerp(y, b.y - 6, p)));
+    IT.barreau.el.style.display = "none"; b.barreau = true; S.busy = false;
+    say("ok", "Barreau aimanté déposé au fond du bécher."); drawBeaker(); render();
+  }
+
+  // pissette
+  draggable("pissette", {
+    locked: () => false,
+    start: () => hl("hl1", beakerRect()), move: p => hl("hl1", beakerRect(), near(p.x, p.y, beakerRect(18))),
+    drop: p => near(p.x, p.y, beakerRect(18)) ? addWater() : goHome("pissette"),
+    key: () => addWater()
+  });
+  async function addWater(){
+    const b = S.beaker;
+    if (b.water >= 15){ say("info", "Il y a déjà assez d’eau dans le bécher."); return goHome("pissette"); }
+    S.busy = true; const {x, y} = IT.pissette.pos;
+    await tween(300, p => place("pissette", lerp(x, b.x + 52, p), lerp(y, b.y - 78, p), -35 * p));
+    const s = mk("path", {d:`M${b.x + 30},${b.y - 112} Q${b.x + 8},${b.y - 100} ${b.x + 2},${b.y - 20}`, stroke:"#9fd3e6", "stroke-width":2, fill:"none"}, $("fx"));
+    await tween(700, p => { b.water = Math.min(15, b.water + .08); drawBeaker(); });
+    s.remove(); b.water = Math.round(b.water);
+    await goHome("pissette", 400); S.busy = false;
+    say("info", "Eau distillée ajoutée (pour rincer les parois ou mieux immerger le barreau). Elle ne change pas la <b>quantité</b> de soude : le volume à l’équivalence reste le même.");
+    render();
+  }
+
+  // ---------- Robinet et agitateur ----------
+  function setTap(mode){
+    if (!S.burette){ say("info", "Installe d’abord la burette."); return; }
+    if (mode !== "closed" && S.filled){
+      if (S.phase === 1){ say("warn", "Termine la préparation avant d’ouvrir le robinet."); return; }
+      if (S.phase === 4 || S.busy){ return; }
+      if (!underBurette()){ say("bad", "Place le bécher sous la burette avant d’ouvrir le robinet !"); return; }
+      if (!S.stirOn){ say("warn", "Allume d’abord l’agitateur : la solution doit être homogène pour bien voir le changement de couleur."); return; }
+    }
+    S.tap = mode; S.dropT = 0; render();
+  }
+  function toggleStir(){
+    if (!S.stirPlaced){ say("info", "Place d’abord l’agitateur sous la burette."); return; }
+    S.stirOn = !S.stirOn;
+    if (!S.stirOn && S.tap !== "closed" && S.filled && S.phase >= 2){ S.tap = "closed"; say("warn", "Agitateur arrêté : robinet refermé."); }
+    render();
+  }
+  document.querySelectorAll(".tap").forEach(b => b.addEventListener("click", () => setTap(b.dataset.tap)));
+  $("oneDrop").addEventListener("click", () => {
+    if (S.phase < 2 || S.phase === 4 || S.busy) return;
+    if (!underBurette()) return say("bad", "Place le bécher sous la burette.");
+    if (!S.stirOn) return say("warn", "Allume d’abord l’agitateur.");
+    addAcid(.05, true);
+  });
+  $("stirBtn").addEventListener("click", toggleStir);
+
+  // ---------- Chimie : couleur du BBT ----------
+  function colorState(){
+    const b = S.beaker;
+    if (!b.bbt) return "none";
+    if (b.soude < 9.99) return b.soude > 0 ? "blue" : "bbt";
+    if (S.phase < 2) return "blue";
+    const u = S.read * 20, ue = VEQ * 20;            // en nombre de gouttes de 0,05 mL
+    if (u < ue - .5) return "blue";
+    if (u <= ue + .5) return "green";
+    return "yellow";
+  }
+  const COLORS = {none:"#e8f4f8", bbt:"#cfe0b4", blue:"#3c72d4", green:"#3fa35b", yellow:"#e2c935"};
+  let shownColor = COLORS.none;
+  function addAcid(dv, single){
+    if (S.read >= 25){ S.tap = "closed"; say("warn", "La burette est vide."); render(); return; }
+    S.read = Math.min(25, S.read + dv);
+    if (colorState() === "blue") S.flash = 1;
+    if (single) spawnDrop();
+    const c = colorState();
+    if (c !== S.color){ onColorChange(S.color, c); S.color = c; }
+    drawBurette();
+  }
+  function onColorChange(prev, c){
+    if (S.phase === 2 && prev === "blue" && c !== "blue"){
+      say("ok", "<b>Virage !</b> La solution a changé de couleur. Ferme le robinet, puis lis le volume versé dans la loupe.");
+      $("v1").focus({preventScroll:true});
+    }
+    if (S.phase === 3){
+      if (c === "green") say("ok", "<b>Teinte verte</b> : c’est l’équivalence ! Ferme le robinet et lis le volume V<sub>E</sub>.");
+      if (c === "yellow" && prev === "green") say("warn", "La solution est devenue <b>jaune</b> : l’équivalence est dépassée d’une goutte. Si tu as vu le vert juste avant, utilise le volume lu au vert ; sinon refais le titrage précis.");
+      if (c === "yellow" && prev === "blue") say("bad", "La solution est passée directement au <b>jaune</b> : l’équivalence est dépassée. Approche plus doucement, goutte à goutte. Refais le titrage précis.");
+    }
+    render();
+  }
+  // gouttes visibles
+  const drops = [];
+  function spawnDrop(){ drops.push({el: mk("circle", {cx:BUR_X, cy:TIP_Y, r:2.4, fill:"#bfe6f3", stroke:"#8cc6da"}, $("fx")), y:TIP_Y, v:0}); }
+  let stream = null;
+
+  // ---------- Rendu ----------
+  function drawBurette(){
+    const liq = $("burLiq"), tip = $("burTip");
+    if (!S.filled || S.read >= 25){ attr(liq, {height:0}); tip.setAttribute("opacity", 0); }
+    else {
+      const top = Math.max(GRAD0 + S.read * PX_ML, 2);
+      attr(liq, {y: top, height: 281 - top}); tip.setAttribute("opacity", 1);
+    }
+    const ang = S.tap === "closed" ? 90 : S.tap === "drop" ? 50 : 0;
+    $("handleRect").setAttribute("transform", `rotate(${ang})`);
+    drawLoupe();
+  }
+  let lastLoupe = null;
+  function drawLoupe(){
+    $("loupe").setAttribute("opacity", S.filled ? 1 : 0);
+    if (!S.filled) return;
+    const r = Math.round(S.read * 1000) / 1000;
+    if (r === lastLoupe) return; lastLoupe = r;
+    const g = $("loupeIn"); g.innerHTML = "";
+    const K = 48, cy = 100;                           // 48 px par mL dans la loupe
+    mk("rect", {x:20, y:30, width:130, height:140, fill:"#fbfdfe"}, g);
+    mk("rect", {x:54, y:30, width:56, height:140, fill:"rgba(200,232,242,.35)", stroke:"#8fbccb"}, g);
+    // liquide sous le ménisque
+    if (r < 25) mk("path", {d:`M54,${cy - 5} Q82,${cy + 5} 110,${cy - 5} L110,175 L54,175 Z`, fill:"#bfe6f3"}, g);
+    mk("path", {d:`M54,${cy - 5} Q82,${cy + 5} 110,${cy - 5}`, stroke:"#3c7f99", "stroke-width":1.6, fill:"none"}, g);
+    for (let v = Math.floor((r - 1.6) * 10); v <= Math.ceil((r + 1.6) * 10); v++){
+      if (v < 0 || v > 250) continue;
+      const y = cy + (v / 10 - r) * K, big = v % 10 === 0, mid = v % 5 === 0;
+      mk("line", {x1:54, x2:54 + (big ? 30 : mid ? 20 : 12), y1:y, y2:y, stroke:"#1f3e52", "stroke-width": big ? 1.6 : 1}, g);
+      if (big) mk("text", {x:120, y:y + 4, "font-size":13, "font-weight":700, fill:"#1f3e52"}, g).textContent = v / 10;
+    }
+  }
+  function drawBeaker(){
+    const b = S.beaker, tot = b.soude + b.water + (S.phase >= 2 ? S.read : 0);
+    const h = tot > 0 ? 5 + tot * .9 : 0;
+    attr($("bkLiq"), {y: -2 - h, height: h + 2});
+    $("bkBar").setAttribute("opacity", b.barreau ? 1 : 0);
+    $("bkFlash").setAttribute("cy", -2 - h + 5);
+  }
+  function renderMsg(){ const m = S.msg; $("msg").innerHTML = m ? `<div class="msg ${m.type || ""}">${m.html}</div>` : ""; }
+
+  const CHECK = [
+    ["pince", "Fixer la pince et la noix sur la tige", () => S.pince],
+    ["burette", "Installer la burette dans la pince", () => S.burette],
+    ["burette", "Fermer le robinet de la burette", () => S.burette && S.tap === "closed"],
+    ["hcl", "Remplir la burette d’acide chlorhydrique", () => S.filled],
+    ["stirrer", "Placer l’agitateur sous la burette", () => S.stirPlaced],
+    ["propipette", "Emboîter la propipette sur la pipette", () => S.propOnPip],
+    ["pipette", "Prélever 10,0 mL de soude et les verser dans le bécher", () => S.beaker.soude >= 10],
+    ["bbt", "Ajouter quelques gouttes de BBT", () => S.beaker.bbt],
+    ["barreau", "Mettre le barreau aimanté dans le bécher", () => S.beaker.barreau],
+    ["beaker", "Poser le bécher sur l’agitateur", () => S.beaker.onStir]
+  ];
+  const TITLES = {1:"Préparation du matériel", 2:"Titrage rapide", 3:"Titrage précis", 4:"Exploitation des résultats"};
+  function render(){
+    // passage à la phase 2
+    if (S.phase === 1 && CHECK.every(c => c[2]())){
+      S.phase = 2; S.color = colorState();
+      S.msg = {type:"ok", html:"Montage prêt ! Allume l’agitateur, puis ouvre le robinet."};
+    }
+    document.querySelectorAll("#phases li").forEach(li => { const p = +li.dataset.p; li.className = p < S.phase ? "done" : p === S.phase ? "current" : ""; });
+    $("title").textContent = TITLES[S.phase];
+    const T = {
+      1: "<p>Fais glisser le matériel avec la souris ou le doigt pour réaliser le montage. L’ordre est libre, mais certaines étapes en demandent d’autres&nbsp;!</p>",
+      2: `<p>Verse l’acide <b>assez rapidement</b> (robinet ouvert) en observant la couleur du BBT&nbsp;: <b>bleu</b> en milieu basique, <b>vert</b> à l’équivalence, <b>jaune</b> en milieu acide.</p><p>Ferme le robinet dès le changement de couleur et note le volume V₁. Ce titrage donne un ordre de grandeur.</p>`,
+      3: S.V1 !== null ? `<p>Verse rapidement jusqu’à <b>${fmt(Math.max(S.V1 - 1, 0), 1)} mL</b> (V₁ − 1 mL), puis passe en <b>goutte à goutte</b> ou utilise « + 1 goutte ».</p><p>L’équivalence est atteinte quand la solution devient <b>verte</b>.</p>` : "",
+      4: "<p>À l’équivalence, les réactifs ont été introduits dans les proportions de la réaction H₃O⁺ + HO⁻ → 2 H₂O&nbsp;: n(H₃O⁺) versé = n(HO⁻) initial.</p>"
+    };
+    $("text").innerHTML = T[S.phase];
+    // liste de contrôle
+    let nextDone = false;
+    $("checklist").innerHTML = S.phase === 1 ? CHECK.map(c => {
+      const d = c[2](); let cls = d ? "done" : "";
+      if (!d && !nextDone){ cls = "next"; nextDone = true; }
+      return `<li class="${cls}">${c[1]}</li>`;
+    }).join("") : "";
+    // objet suggéré
+    const nx = S.phase === 1 ? (CHECK.find(c => !c[2]()) || [])[0] : null;
+    for (const n in IT) IT[n].el.classList.toggle("pulse", n === nx && !S.busy);
+    // commandes
+    document.querySelectorAll(".tap").forEach(b => b.setAttribute("aria-pressed", b.dataset.tap === S.tap));
+    const titr = S.phase === 2 || S.phase === 3;
+    document.querySelectorAll(".tap").forEach(b => b.disabled = !S.burette || (S.filled && !titr && b.dataset.tap !== "closed"));
+    $("oneDrop").disabled = !titr;
+    $("stirBtn").disabled = !S.stirPlaced;
+    $("stirBtn").setAttribute("aria-pressed", S.stirOn);
+    $("stirBtn").textContent = S.stirOn ? "Marche ●" : "Marche";
+    $("stirLed").setAttribute("fill", S.stirOn ? "#34c26b" : "#7c8b96");
+    $("knobLine").setAttribute("transform", S.stirOn ? "rotate(70 34 22)" : "");
+    // formulaires
+    $("form2").hidden = S.phase !== 2;
+    $("go3").hidden = !(S.phase === 2 && S.V1 !== null);
+    $("form3").hidden = S.phase !== 3;
+    $("redo3").hidden = S.phase !== 3;
+    $("form4").hidden = S.phase !== 4 || S.done;
+    if (S.phase === 4) $("data4").innerHTML = `<span class="chip">C<sub>A</sub> = 0,100 mol/L</span><span class="chip">V<sub>E</sub> = ${fmt(S.VE, 2)} mL</span><span class="chip">V<sub>B</sub> = 10,0 mL</span>`;
+    drawBurette(); drawBeaker(); renderMsg();
+  }
+
+  // ---------- Formulaires ----------
+  const num = s => { s = String(s).trim().replace(/\s/g, "").replace(",", "."); return /^\d*\.?\d+$/.test(s) ? Number(s) : NaN; };
+  function mark(id, ok){ $(id).className = ok ? "good" : "wrong"; }
+  $("ok2").addEventListener("click", () => {
+    const v = num($("v1").value);
+    if (!Number.isFinite(v)) return say("warn", "Écris le volume lu (exemple : 10,5).");
+    if (S.color === "blue"){ mark("v1", false); return say("warn", "Le virage n’a pas encore eu lieu : la solution est encore bleue."); }
+    if (S.tap !== "closed"){ return say("warn", "Ferme d’abord le robinet avant de lire la burette."); }
+    if (Math.abs(v - S.read) > .051){ mark("v1", false); return say("bad", "Ce n’est pas la bonne lecture. Dans la loupe, lis la graduation au niveau du <b>bas du ménisque</b> (chaque petit trait vaut 0,1 mL)."); }
+    mark("v1", true); S.V1 = v;
+    say("ok", `V₁ ≈ ${fmt(v, 2)} mL. L’équivalence est proche de cette valeur, mais en versant vite on risque de l’avoir dépassée. Le titrage précis va permettre de la repérer à la goutte près.`);
+    render();
+  });
+  async function newBeaker(){
+    S.busy = true; S.tap = "closed"; render();
+    const b = S.beaker;
+    await tween(500, p => { const k = 1 - p; drawBeakerFade(k); });
+    b.soude = 10; b.water = 0; b.bbt = true; b.barreau = true;
+    const r0 = S.read;
+    await tween(900, p => { S.read = lerp(r0, 0, p); drawBurette(); });
+    S.read = 0; S.color = "blue"; S.flash = 0; drawBurette(); drawBeaker();
+    $("bkLiq").setAttribute("opacity", 1);
+    S.busy = false;
+  }
+  function drawBeakerFade(k){ $("bkLiq").setAttribute("opacity", k); }
+  $("go3").addEventListener("click", async () => {
+    await newBeaker(); S.phase = 3;
+    say("info", "Nouveau bécher préparé comme avant (10,0 mL de soude + BBT + barreau), burette remplie et remise au zéro.");
+    render();
+  });
+  $("redo3").addEventListener("click", async () => { await newBeaker(); say("info", "Nouveau bécher prêt, burette au zéro. Approche l’équivalence goutte à goutte."); $("ve").value = ""; $("ve").className = ""; render(); });
+  $("ok3").addEventListener("click", () => {
+    const v = num($("ve").value);
+    if (!Number.isFinite(v)) return say("warn", "Écris le volume lu (exemple : 10,45).");
+    if (S.tap !== "closed") return say("warn", "Ferme d’abord le robinet avant de lire la burette.");
+    if (S.color === "blue"){ mark("ve", false); return say("warn", "La solution est encore bleue : l’équivalence n’est pas atteinte."); }
+    if (S.color === "yellow" && S.read - VEQ > .051){ mark("ve", false); return say("bad", "La solution est jaune : l’équivalence est dépassée. Refais le titrage précis avec un nouveau bécher."); }
+    const ref = S.color === "green" ? S.read : VEQ;
+    if (Math.abs(v - ref) > .051){ mark("ve", false); return say("bad", "Relis la burette dans la loupe : bas du ménisque, au 0,05 mL près."); }
+    mark("ve", true); S.VE = v; S.phase = 4;
+    say("ok", `V<sub>E</sub> = ${fmt(v, 2)} mL ${S.V1 !== null ? `(cohérent avec le titrage rapide : V₁ ≈ ${fmt(S.V1, 2)} mL)` : ""}. Calcule maintenant la concentration de la soude.`);
+    render();
+  });
+  $("ok4").addEventListener("click", () => {
+    const c = num($("cb").value), VE = S.VE, exp = .1 * VE / 10;
+    if (!Number.isFinite(c)) return say("warn", "Écris la concentration (exemple : 0,104).");
+    const close = (a, b, t) => Math.abs(a - b) <= t;
+    if (close(c, exp, .0006)){
+      mark("cb", true); S.done = true;
+      const real = VEQ / 100;
+      $("final").hidden = false;
+      $("final").innerHTML = `<div class="msg ok"><b>Bravo !</b> C<sub>B</sub> = 0,100 × ${fmt(VE, 2)} ÷ 10,0 ≈ <b>${fmt(exp, 3)} mol/L</b>.</div>
+        <table style="margin-top:10px"><tr><th>Titrage rapide</th><td>V₁ ≈ ${S.V1 !== null ? fmt(S.V1, 2) : "—"} mL</td></tr>
+        <tr><th>Titrage précis</th><td>V<sub>E</sub> = ${fmt(VE, 2)} mL</td></tr>
+        <tr><th>Concentration trouvée</th><td>C<sub>B</sub> ≈ ${fmt(exp, 3)} mol/L</td></tr>
+        <tr><th>Valeur de la simulation</th><td>${fmt(real, 4)} mol/L (écart ${fmt(Math.abs(exp - real) / real * 100, 1)} %)</td></tr></table>
+        <p class="hint" style="margin-top:8px">Pour aller plus loin : pourquoi fait-on un titrage rapide avant le titrage précis ? Pourquoi l’eau distillée ajoutée ne change-t-elle pas le résultat ?</p>`;
+      say("ok", "TP terminé.");
+      return render();
+    }
+    mark("cb", false);
+    if (close(c, .1 * 10 / VE, .002)) return say("bad", "Tu as inversé V<sub>E</sub> et V<sub>B</sub> : C<sub>B</sub> = C<sub>A</sub> × V<sub>E</sub> ÷ V<sub>B</sub>.");
+    if (close(c, .1 * VE, .01)) return say("bad", "N’oublie pas de diviser par V<sub>B</sub> = 10,0 mL.");
+    if (close(c, exp * 1000, 1) || close(c, exp / 1000, 1e-6)) return say("bad", "Attention aux unités : V<sub>E</sub> et V<sub>B</sub> doivent être dans la <b>même unité</b> (tous les deux en mL, par exemple).");
+    if (close(c, exp, .006)) return say("warn", "Presque ! Vérifie ton calcul et arrondis à 3 chiffres significatifs.");
+    say("bad", `Applique C<sub>B</sub> = C<sub>A</sub> × V<sub>E</sub> ÷ V<sub>B</sub> avec C<sub>A</sub> = 0,100 mol/L, V<sub>E</sub> = ${fmt(VE, 2)} mL et V<sub>B</sub> = 10,0 mL.`);
+  });
+  $("resetBtn").addEventListener("click", () => { if (S.phase === 1 || confirm("Recommencer tout le TP ?")) location.reload(); });
+
+  // ---------- Boucle d’animation ----------
+  let last = performance.now();
+  function loop(now){
+    const dt = Math.min(.05, (now - last) / 1000); last = now;
+    // écoulement
+    const flowing = S.filled && (S.phase === 2 || S.phase === 3) && S.tap !== "closed" && !S.busy && S.read < 25;
+    if (flowing){
+      if (S.tap === "open") addAcid(.45 * dt, false);
+      else { S.dropT += dt; if (S.dropT >= .55){ S.dropT = 0; addAcid(.05, true); } }
+    }
+    if (flowing && S.tap === "open"){
+      const surf = S.beaker.y - 2 - (5 + (S.beaker.soude + S.beaker.water + S.read) * .9);
+      if (!stream) stream = mk("line", {x1:BUR_X, x2:BUR_X, y1:TIP_Y, y2:surf, stroke:"#bfe6f3", "stroke-width":2.2, "stroke-linecap":"round"}, $("fx"));
+      stream.setAttribute("y2", surf);
+    } else if (stream){ stream.remove(); stream = null; }
+    // gouttes
+    const surf = S.beaker.y - 2 - (5 + (S.beaker.soude + S.beaker.water + S.read) * .9);
+    for (let i = drops.length - 1; i >= 0; i--){
+      const d = drops[i]; d.v += 900 * dt; d.y += d.v * dt; d.el.setAttribute("cy", d.y);
+      if (d.y >= surf){ d.el.remove(); drops.splice(i, 1); }
+    }
+    // couleur (transition douce) et « nuage » jaune qui disparaît avec l’agitation
+    const target = COLORS[colorState()];
+    shownColor = mixHex(shownColor, target, Math.min(1, dt * 4));
+    $("bkLiq").setAttribute("fill", shownColor);
+    const nearEq = VEQ - S.read < 1.2;
+    S.flash = Math.max(0, S.flash - dt * (S.stirOn ? (nearEq ? .8 : 2.5) : .3));
+    attr($("bkFlash"), {opacity: S.flash * (nearEq ? .9 : .7), fill: nearEq ? "#7fb04a" : "#e2c935"});
+    // barreau
+    if (S.stirOn && S.beaker.barreau && S.beaker.onStir){
+      S.barAngle += dt * 14;
+      const sx = Math.abs(Math.cos(S.barAngle));
+      $("bkBar").setAttribute("transform", `scale(${Math.max(sx, .25)},1)`);
+    }
+    requestAnimationFrame(loop);
+  }
+  function mixHex(a, b, t){
+    const pa = [1,3,5].map(i => parseInt(a.substr(i, 2), 16)), pb = [1,3,5].map(i => parseInt(b.substr(i, 2), 16));
+    return "#" + pa.map((v, i) => Math.round(v + (pb[i] - v) * t).toString(16).padStart(2, "0")).join("");
+  }
+
+  render();
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
