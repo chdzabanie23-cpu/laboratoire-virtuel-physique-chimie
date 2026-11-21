@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Identifier la nature d’un mouvement | Laboratoire virtuel</title>
+<style>
+  :root{
+    --ink:#16302c; --muted:#4f6b66; --teal:#1f6f66; --teal-d:#14564e;
+    --bg:#eef3f2; --card:#fff; --line:#d3e2df; --soft:#e8f2f0; --ok:#1d7f54; --bad:#b4400f; --pt:#e8590c;
+  }
+  *{box-sizing:border-box}
+  [hidden]{display:none!important}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.45}
+  header,main{max-width:1240px;margin:0 auto;padding:0 18px}
+  header{padding-top:16px}
+  .kicker{margin:0;color:var(--teal);font-weight:700;font-size:.85rem}
+  h1{margin:.05em 0 .1em;font-size:clamp(1.8rem,4vw,2.5rem);letter-spacing:-.03em;line-height:1.05}
+  .lead{margin:0 0 14px;color:var(--muted);max-width:80ch}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px 16px;margin-bottom:16px}
+  h2{font-size:1.1rem;margin:0 0 8px}
+  h3{font-size:.98rem;margin:0 0 6px}
+  .scenes{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:16px}
+  .scene-btn{font:inherit;text-align:left;border:1.5px solid var(--line);background:#fff;border-radius:14px;padding:10px 12px;cursor:pointer;transition:all .18s;display:flex;gap:10px;align-items:center}
+  .scene-btn:hover{border-color:var(--teal)}
+  .scene-btn[aria-pressed="true"]{border-color:var(--teal);background:var(--soft);box-shadow:inset 0 0 0 1px var(--teal)}
+  .scene-btn .ic{font-size:1.5rem}
+  .scene-btn b{display:block;font-size:.9rem}
+  .scene-btn small{color:var(--muted);font-size:.78rem}
+  .scene-btn .st{margin-left:auto;font-size:.8rem;color:var(--ok);font-weight:700;min-width:2.8em;text-align:right;white-space:nowrap}
+  .scene-btn{min-width:0}
+  .scene-btn > span:nth-child(2){min-width:0}
+  .scene-btn small{white-space:nowrap;display:block;overflow:hidden;text-overflow:ellipsis}
+  .grid{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(290px,1fr);gap:16px;align-items:start}
+  .steps{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}
+  .step{font:inherit;font-weight:650;font-size:.88rem;border:1px solid var(--line);background:#fff;border-radius:999px;padding:.4em .9em;cursor:pointer;color:var(--muted);display:inline-flex;gap:.45em;align-items:center}
+  .step .n{display:grid;place-items:center;width:1.5em;height:1.5em;border-radius:50%;background:#edf1f0;font-size:.78rem}
+  .step[aria-pressed="true"]{border-color:var(--teal);color:var(--teal-d);background:var(--soft)}
+  .step[aria-pressed="true"] .n{background:var(--teal);color:#fff}
+  .step.done .n{background:#d8efe3;color:var(--ok)}
+  canvas{display:block;width:100%;border-radius:12px}
+  #video{aspect-ratio:800/450;background:#1d2a2a;cursor:crosshair;touch-action:none}
+  .vbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
+  .btn{font:inherit;font-weight:650;font-size:.9rem;border-radius:10px;border:1px solid var(--line);background:#fff;color:var(--ink);padding:.5em .8em;cursor:pointer;transition:background .15s,border-color .15s}
+  .btn:hover:not(:disabled){border-color:var(--teal);background:var(--soft)}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  .btn.primary{background:var(--teal);border-color:var(--teal);color:#fff}
+  .btn.primary:hover:not(:disabled){background:var(--teal-d)}
+  .btn:focus-visible,.step:focus-visible,.scene-btn:focus-visible{outline:3px solid #8fd3c7;outline-offset:2px}
+  input[type=range]{flex:1;min-width:120px;accent-color:var(--teal)}
+  .frameinfo{font-variant-numeric:tabular-nums;font-weight:650;font-size:.9rem;min-width:12em}
+  .side{display:flex;flex-direction:column;gap:12px}
+  .instr p{margin:.3em 0}
+  .msg{padding:10px 12px;border-radius:10px;border-left:4px solid var(--teal);background:var(--soft);font-size:.93rem}
+  .msg.ok{border-color:var(--ok);background:#e6f4ec}
+  .msg.bad{border-color:var(--bad);background:#fbeee6}
+  .msg.warn{border-color:#c48a0c;background:#fbf4e1}
+  .chips{display:flex;flex-wrap:wrap;gap:6px}
+  .chip{background:var(--soft);color:var(--teal-d);border-radius:999px;padding:.2em .7em;font-size:.84rem;font-weight:650;font-variant-numeric:tabular-nums}
+  .inline{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .inline input,.inline select{font:inherit;padding:.45em .6em;border:1.5px solid var(--line);border-radius:9px}
+  .inline input{width:7em}
+  .inline input[type=checkbox]{width:auto;accent-color:var(--teal)}
+  .tablewrap{max-height:330px;overflow:auto;border:1px solid var(--line);border-radius:10px}
+  table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:.86rem}
+  th,td{padding:.35em .5em;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+  th{position:sticky;top:0;background:#f4f8f7;color:var(--muted);font-size:.8rem}
+  td:first-child,th:first-child{text-align:center}
+  tr.cur td{background:#fff4e8}
+  .grid2{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(280px,1fr);gap:16px;align-items:start}
+  #graph{aspect-ratio:640/380;background:#fff;border:1px solid var(--line)}
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#fff;flex-wrap:wrap}
+  .seg button{font:inherit;font-size:.86rem;font-weight:650;border:0;background:transparent;padding:.45em .7em;cursor:pointer;color:var(--ink)}
+  .seg button+button{border-left:1px solid var(--line)}
+  .seg button[aria-pressed="true"]{background:var(--teal);color:#fff}
+  .eq{font-weight:700;color:#7a2fb0;font-variant-numeric:tabular-nums;min-height:1.4em}
+  fieldset{border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:0 0 10px}
+  legend{font-weight:700;font-size:.92rem;padding:0 .3em}
+  fieldset label{display:inline-flex;align-items:center;gap:.35em;margin:.2em .9em .2em 0;font-size:.92rem;cursor:pointer}
+  fieldset input{accent-color:var(--teal)}
+  textarea{width:100%;font:inherit;font-size:.92rem;border:1.5px solid var(--line);border-radius:10px;padding:.5em .6em;min-height:4.5em;resize:vertical}
+  details summary{cursor:pointer;font-weight:650;color:var(--muted);font-size:.88rem}
+  .kbd{font-size:.8rem;color:var(--muted)}
+  @media (max-width:1000px){.scenes{grid-template-columns:repeat(3,1fr)}.grid,.grid2{grid-template-columns:1fr}}
+  @media (max-width:560px){.scenes{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<header>
+  <p class="kicker">Physique-chimie · Mouvement · Laboratoire virtuel</p>
+  <h1>Identifier la nature d’un mouvement à partir d’un enregistrement</h1>
+  <p class="lead">Choisis un enregistrement vidéo. Comme avec un logiciel de pointage, tu vas <b>étalonner</b> l’image avec la règle, placer l’<b>origine</b>, <b>pointer</b> la position de l’objet image par image, puis <b>exploiter</b> le tableau et les graphiques pour conclure sur la trajectoire et la vitesse.</p>
+</header>
+
+<main>
+  <div class="scenes" id="scenes" role="group" aria-label="Enregistrements"></div>
+
+  <div class="grid">
+    <section class="card" aria-labelledby="vTitle">
+      <div class="steps" role="group" aria-label="Étapes">
+        <button class="step" data-mode="calib" type="button"><span class="n">1</span>Étalonner</button>
+        <button class="step" data-mode="origin" type="button"><span class="n">2</span>Origine</button>
+        <button class="step" data-mode="point" type="button"><span class="n">3</span>Pointer</button>
+      </div>
+      <h2 id="vTitle" hidden>Vidéo</h2>
+      <canvas id="video" width="800" height="450" aria-label="Image de l’enregistrement : clique pour étalonner, placer l’origine ou pointer l’objet."></canvas>
+      <div class="vbar">
+        <button class="btn" id="first" type="button" title="Première image">⏮</button>
+        <button class="btn" id="prev" type="button" title="Image précédente">◀</button>
+        <button class="btn" id="play" type="button" title="Lecture au ralenti">▶ Lecture</button>
+        <button class="btn" id="next" type="button" title="Image suivante">▶|</button>
+        <input type="range" id="slider" min="0" max="10" value="0" aria-label="Image">
+        <span class="frameinfo" id="frameinfo"></span>
+      </div>
+      <div class="vbar">
+        <label class="inline kbd"><input type="checkbox" id="showPts" checked> Afficher les points pointés</label>
+        <label class="inline kbd"><input type="checkbox" id="onion"> Superposer toutes les images (chronophotographie)</label>
+        <span class="kbd">Flèches ← → : changer d’image</span>
+      </div>
+    </section>
+
+    <aside class="side">
+      <section class="card instr" aria-live="polite">
+        <h2 id="sTitle"></h2>
+        <div id="sText"></div>
+        <div id="calibForm" class="inline" hidden style="margin-top:8px">
+          <label for="calLen"><b>Longueur réelle :</b></label>
+          <input id="calLen" type="text" inputmode="decimal" placeholder="ex. 1">
+          <select id="calUnit"><option value="1">m</option><option value="0.01">cm</option></select>
+          <button class="btn primary" id="calOk" type="button">Valider</button>
+        </div>
+        <div id="msg" style="margin-top:8px"></div>
+        <div class="chips" id="chips" style="margin-top:8px"></div>
+        <div class="inline" style="margin-top:8px">
+          <button class="btn" id="undo" type="button">↶ Annuler le dernier point</button>
+          <button class="btn" id="clearPts" type="button">Effacer les points</button>
+        </div>
+      </section>
+      <section class="card">
+        <h2>Tableau de mesures</h2>
+        <div class="tablewrap"><table>
+          <thead><tr><th>Point</th><th>t (s)</th><th>x (m)</th><th>y (m)</th><th>d (m)</th><th>v (m/s)</th></tr></thead>
+          <tbody id="tbody"></tbody>
+        </table></div>
+        <p class="kbd" style="margin:.5em 0 0">d = distance entre le point et le suivant ; v = d ÷ Δt (vitesse moyenne entre ces deux positions).</p>
+        <button class="btn" id="csv" type="button" style="margin-top:8px">⬇ Exporter (tableur)</button>
+      </section>
+    </aside>
+  </div>
+
+  <div class="grid2">
+    <section class="card" aria-labelledby="gTitle">
+      <h2 id="gTitle">Graphiques</h2>
+      <div class="vbar" style="margin:0 0 10px">
+        <div class="seg" role="group" aria-label="Graphique" id="gType">
+          <button type="button" data-g="traj" aria-pressed="true">Trajectoire y(x)</button>
+          <button type="button" data-g="xt" aria-pressed="false">x(t)</button>
+          <button type="button" data-g="yt" aria-pressed="false">y(t)</button>
+          <button type="button" data-g="vt" aria-pressed="false">v(t)</button>
+        </div>
+        <div class="seg" role="group" aria-label="Modélisation" id="gModel">
+          <button type="button" data-m="none" aria-pressed="true">Sans modèle</button>
+          <button type="button" data-m="lin" aria-pressed="false">Droite</button>
+          <button type="button" data-m="par" aria-pressed="false">Parabole</button>
+        </div>
+      </div>
+      <canvas id="graph" width="640" height="380" aria-label="Graphique des mesures"></canvas>
+      <div class="eq" id="eq"></div>
+    </section>
+
+    <section class="card" aria-labelledby="qTitle">
+      <h2 id="qTitle">Conclure</h2>
+      <fieldset><legend>1. La trajectoire est…</legend>
+        <label><input type="radio" name="traj" value="rect"> rectiligne</label>
+        <label><input type="radio" name="traj" value="circ"> circulaire</label>
+        <label><input type="radio" name="traj" value="curv"> curviligne (autre courbe)</label>
+      </fieldset>
+      <fieldset><legend>2. Au cours du mouvement, la vitesse…</legend>
+        <label><input type="radio" name="vit" value="const"> est constante</label>
+        <label><input type="radio" name="vit" value="aug"> augmente</label>
+        <label><input type="radio" name="vit" value="dim"> diminue</label>
+        <label><input type="radio" name="vit" value="dimaug"> diminue puis augmente</label>
+      </fieldset>
+      <label for="justif" style="font-weight:700;font-size:.92rem">3. Justifie à l’aide de l’enregistrement</label>
+      <textarea id="justif" placeholder="Ex. : les points sont… ; les distances entre deux points successifs… ; le graphique v(t)…"></textarea>
+      <div class="inline" style="margin-top:8px"><button class="btn primary" id="check" type="button">Vérifier ma conclusion</button></div>
+      <div id="result" style="margin-top:10px" aria-live="polite"></div>
+      <details style="margin-top:12px"><summary>Outils enseignant</summary>
+        <p class="kbd">Pour une démonstration : étalonne, place l’origine et pointe automatiquement toutes les images.</p>
+        <button class="btn" id="auto" type="button">Pointage automatique</button>
+      </details>
+    </section>
+  </div>
+</main>
+
+<script>
+(() => {
+  "use strict";
+  const $ = id => document.getElementById(id);
+  const fmt = (x, n) => (Math.abs(x) < 1e-12 ? 0 : x).toFixed(n).replace(".", ",").replace("-", "−");
+  const W = 800, H = 450;
+
+  // =====================================================================
+  //  Les enregistrements (coordonnées réelles en mètres, y vers le haut)
+  // =====================================================================
+  const G = 9.81;
+  const SCENES = [
+    { id:"palet", icon:"🏒", name:"Palet sur coussin d’air", sub:"vue de dessus",
+      k:550, X0:60, Y0:225, dt:.1, N:21, truth:{traj:"rect", vit:"const"},
+      pos: t => ({x:.05 + .55 * t, y:0}),
+      ruler:{x1:60 + .1*550, y1:392, x2:60 + 1.1*550, y2:392, cm:100, label:"1 m"},
+      bg: drawTable, obj: (c, x, y) => puck(c, x, y, 22),
+      expl:"Les points sont alignés et régulièrement espacés : le palet parcourt des distances égales pendant des durées égales. x(t) est une droite et v(t) reste constante." },
+    { id:"chute", icon:"🔴", name:"Bille en chute", sub:"vue de côté",
+      k:330, X0:400, Y0:62, dt:.04, N:12, truth:{traj:"rect", vit:"aug"},
+      pos: t => ({x:0, y:-.5 * G * t * t}),
+      ruler:{x1:400 + .36*330, y1:62, x2:400 + .36*330, y2:62 + 330, cm:100, label:"1 m"},
+      bg: drawWall, obj: (c, x, y) => ball(c, x, y, 10, "#d6453d"),
+      expl:"Les points sont alignés sur une verticale et de plus en plus espacés : pendant des durées égales, la bille parcourt des distances de plus en plus grandes. La vitesse augmente." },
+    { id:"voiture", icon:"🚗", name:"Voiture qui freine", sub:"vue de côté",
+      k:600, X0:70, Y0:318, dt:.1, N:16, truth:{traj:"rect", vit:"dim"},
+      pos: t => ({x:1.2 * t - .4 * t * t, y:0}),
+      ruler:{x1:70, y1:380, x2:670, y2:380, cm:100, label:"1 m"},
+      bg: drawTrack, obj: (c, x, y) => car(c, x, y),
+      expl:"Les points sont alignés et de moins en moins espacés : la voiture parcourt des distances de plus en plus petites pendant des durées égales. La vitesse diminue jusqu’à l’arrêt." },
+    { id:"disque", icon:"💿", name:"Point d’un disque", sub:"vue de dessus",
+      k:900, X0:400, Y0:222, dt:.1, N:20, truth:{traj:"circ", vit:"const"},
+      pos: t => ({x:.17 * Math.cos(Math.PI * t), y:.17 * Math.sin(Math.PI * t)}),
+      ruler:{x1:265, y1:428, x2:535, y2:428, cm:30, label:"30 cm"},
+      bg: drawDisc, obj: (c, x, y) => sticker(c, x, y),
+      expl:"Les points sont sur un cercle (centre = axe du disque) et régulièrement espacés : distances égales pendant des durées égales. La vitesse est constante." },
+    { id:"balle", icon:"🏀", name:"Balle lancée", sub:"vue de côté",
+      k:420, X0:80, Y0:378, dt:.04, N:17, truth:{traj:"curv", vit:"dimaug"},
+      pos: t => ({x:4 * Math.cos(55 * Math.PI / 180) * t, y:4 * Math.sin(55 * Math.PI / 180) * t - .5 * G * t * t}),
+      ruler:{x1:80, y1:420, x2:500, y2:420, cm:100, label:"1 m"},
+      bg: drawGym, obj: (c, x, y) => ball(c, x, y, 13, "#e8822a", true),
+      expl:"Les points dessinent une courbe (une parabole) : la trajectoire est curviligne. Les points se rapprochent jusqu’au sommet puis s’écartent : la vitesse diminue puis augmente." }
+  ];
+  const toPx = (s, p) => [s.X0 + p.x * s.k, s.Y0 - p.y * s.k];
+
+  // ---------- Dessins (décors) ----------
+  function cross(c, x, y, r, col = "rgba(0,0,0,.55)"){
+    c.strokeStyle = col; c.lineWidth = 1.2;
+    c.beginPath(); c.moveTo(x - r, y); c.lineTo(x + r, y); c.moveTo(x, y - r); c.lineTo(x, y + r); c.stroke();
+  }
+  function puck(c, x, y, r){
+    c.fillStyle = "rgba(0,0,0,.25)"; c.beginPath(); c.arc(x + 3, y + 4, r, 0, 7); c.fill();
+    const g = c.createRadialGradient(x - 6, y - 6, 2, x, y, r); g.addColorStop(0, "#ffe08a"); g.addColorStop(1, "#c98a12");
+    c.fillStyle = g; c.beginPath(); c.arc(x, y, r, 0, 7); c.fill();
+    c.strokeStyle = "#8a5d07"; c.lineWidth = 2; c.stroke();
+    c.fillStyle = "#fff"; c.beginPath(); c.arc(x, y, 5, 0, 7); c.fill(); cross(c, x, y, 5, "#333");
+  }
+  function ball(c, x, y, r, col, lines){
+    const g = c.createRadialGradient(x - r/3, y - r/3, 1, x, y, r); g.addColorStop(0, "#fff3e6"); g.addColorStop(.35, col); g.addColorStop(1, "#5a1a10");
+    c.fillStyle = g; c.beginPath(); c.arc(x, y, r, 0, 7); c.fill();
+    if (lines){ c.strokeStyle = "rgba(60,25,0,.6)"; c.lineWidth = 1; c.beginPath(); c.arc(x, y, r, 0, 7); c.moveTo(x - r, y); c.lineTo(x + r, y); c.stroke(); }
+    cross(c, x, y, 4, "rgba(255,255,255,.9)");
+  }
+  function car(c, x, y){
+    c.fillStyle = "rgba(0,0,0,.2)"; c.beginPath(); c.ellipse(x, y + 24, 52, 5, 0, 0, 7); c.fill();
+    c.fillStyle = "#2f74c0"; c.beginPath(); c.roundRect(x - 48, y - 8, 96, 26, 8); c.fill();
+    c.fillStyle = "#2a64a6"; c.beginPath(); c.roundRect(x - 26, y - 26, 50, 22, 9); c.fill();
+    c.fillStyle = "#cfe8f6"; c.beginPath(); c.roundRect(x - 20, y - 22, 18, 14, 3); c.roundRect(x + 2, y - 22, 18, 14, 3); c.fill();
+    for (const dx of [-28, 28]){ c.fillStyle = "#222"; c.beginPath(); c.arc(x + dx, y + 18, 9, 0, 7); c.fill(); c.fillStyle = "#aaa"; c.beginPath(); c.arc(x + dx, y + 18, 3.5, 0, 7); c.fill(); }
+    c.fillStyle = "#fff"; c.beginPath(); c.arc(x, y + 5, 7, 0, 7); c.fill(); c.strokeStyle = "#222"; c.lineWidth = 1; c.stroke(); cross(c, x, y + 5, 7, "#111");
+  }
+  function sticker(c, x, y){
+    c.fillStyle = "#fff"; c.beginPath(); c.arc(x, y, 9, 0, 7); c.fill();
+    c.strokeStyle = "#e8590c"; c.lineWidth = 2.5; c.stroke(); cross(c, x, y, 6, "#222");
+  }
+  function drawRuler(c, r){
+    const dx = r.x2 - r.x1, dy = r.y2 - r.y1, L = Math.hypot(dx, dy), a = Math.atan2(dy, dx);
+    c.save(); c.translate(r.x1, r.y1); c.rotate(a);
+    c.fillStyle = "#f4dc8e"; c.strokeStyle = "#a8853e"; c.lineWidth = 1;
+    c.beginPath(); c.roundRect(-10, -1, L + 20, 22, 3); c.fill(); c.stroke();
+    const pcm = L / r.cm, major = r.cm <= 30 ? 5 : 10;
+    c.strokeStyle = "#3c2c0c"; c.fillStyle = "#3c2c0c"; c.font = "700 10px Inter, sans-serif"; c.textAlign = "center";
+    for (let i = 0; i <= r.cm; i++){
+      const x = i * pcm, big = i % major === 0, mid = i % 5 === 0;
+      if (pcm < 4 && !mid) continue;
+      c.lineWidth = big ? 1.4 : .8;
+      c.beginPath(); c.moveTo(x, -1); c.lineTo(x, big ? 11 : mid ? 8 : 5); c.stroke();
+      if (big){
+        c.save(); c.translate(x, 19); if (Math.abs(a) > 1) c.rotate(-a); c.fillText(String(i), 0, 0); c.restore();
+      }
+    }
+    c.save(); c.translate(L / 2, 19); if (Math.abs(a) > 1){ c.rotate(-a); } c.font = "800 9px Inter, sans-serif"; c.fillStyle = "#7a5a14"; c.fillText("cm", Math.abs(a) > 1 ? 18 : 22, 0); c.restore();
+    c.restore();
+  }
+  function drawTable(c){
+    c.fillStyle = "#262d33"; c.fillRect(0, 0, W, H);
+    c.fillStyle = "#3f6f9c"; c.beginPath(); c.roundRect(28, 58, 744, 300, 10); c.fill();
+    c.strokeStyle = "#cfd8de"; c.lineWidth = 6; c.stroke();
+    c.fillStyle = "rgba(255,255,255,.18)";
+    for (let x = 50; x < 760; x += 22) for (let y = 78; y < 350; y += 22){ c.beginPath(); c.arc(x, y, 1.6, 0, 7); c.fill(); }
+  }
+  function drawWall(c){
+    c.fillStyle = "#e9e4da"; c.fillRect(0, 0, W, H);
+    c.strokeStyle = "rgba(0,0,0,.06)"; c.lineWidth = 1;
+    for (let y = 0; y < H; y += 30){ c.beginPath(); c.moveTo(0, y); c.lineTo(W, y); c.stroke(); }
+    c.fillStyle = "#4a5560"; c.fillRect(330, 0, 140, 30); c.fillRect(392, 30, 16, 18);
+    c.fillStyle = "#6c7884"; c.beginPath(); c.roundRect(380, 40, 40, 10, 3); c.fill();
+    c.fillStyle = "#cbbfa8"; c.fillRect(0, 430, W, 20);
+  }
+  function drawTrack(c){
+    const g = c.createLinearGradient(0, 0, 0, H); g.addColorStop(0, "#dfe9ee"); g.addColorStop(1, "#c7d4da");
+    c.fillStyle = g; c.fillRect(0, 0, W, H);
+    c.fillStyle = "#8d7b66"; c.fillRect(0, 345, W, 12);
+    c.fillStyle = "#6f604f"; c.fillRect(0, 357, W, 6);
+    c.fillStyle = "#b9c6cc"; c.fillRect(0, 363, W, 87);
+  }
+  function drawDisc(c, t){
+    c.fillStyle = "#30353a"; c.fillRect(0, 0, W, H);
+    const s = SCENES[3], x = s.X0, y = s.Y0, R = .2 * s.k;
+    c.fillStyle = "#151719"; c.beginPath(); c.arc(x, y, R, 0, 7); c.fill();
+    c.strokeStyle = "rgba(255,255,255,.06)"; for (let r = 30; r < R; r += 6){ c.beginPath(); c.arc(x, y, r, 0, 7); c.stroke(); }
+    const a = -Math.PI * t;
+    c.save(); c.translate(x, y); c.rotate(a);
+    c.fillStyle = "#b8463d"; c.beginPath(); c.arc(0, 0, 45, 0, 7); c.fill();
+    c.fillStyle = "#f2e6c9"; c.font = "800 13px Inter, sans-serif"; c.textAlign = "center"; c.fillText("33 tr/min", 0, -10);
+    c.restore();
+    c.fillStyle = "#ccc"; c.beginPath(); c.arc(x, y, 5, 0, 7); c.fill();
+  }
+  function drawGym(c){
+    c.fillStyle = "#e3d7c3"; c.fillRect(0, 0, W, 395);
+    c.fillStyle = "rgba(0,0,0,.05)"; for (let x = 0; x < W; x += 60) c.fillRect(x, 0, 2, 395);
+    c.fillStyle = "#b98b55"; c.fillRect(0, 395, W, 55);
+    c.strokeStyle = "rgba(0,0,0,.12)"; for (let x = 0; x < W; x += 48){ c.beginPath(); c.moveTo(x, 395); c.lineTo(x, 450); c.stroke(); }
+  }
+
+  // =====================================================================
+  //  État (un état par enregistrement)
+  // =====================================================================
+  const states = SCENES.map(() => ({calA:null, calB:null, scale:null, origin:null, pts:[], frame:0, mode:"calib", tempCal:null}));
+  let si = 0, S = states[0], sc = SCENES[0];
+  let graphType = "traj", model = "none", playing = null, hover = null;
+
+  // =====================================================================
+  //  Rendu de la vidéo
+  // =====================================================================
+  const cv = $("video"), ctx = cv.getContext("2d");
+  const frameCv = document.createElement("canvas"), fctx = frameCv.getContext("2d");
+  let dpr = 1;
+  function fit(){
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    for (const c of [cv, frameCv]){ c.width = W * dpr; c.height = H * dpr; }
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); fctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    gfit(); draw(); drawGraph();
+  }
+  function renderFrame(c, f){
+    const t = f * sc.dt;
+    sc.bg(c, t);
+    drawRuler(c, sc.ruler);
+    const [x, y] = toPx(sc, sc.pos(t));
+    sc.obj(c, x, y);
+  }
+  function draw(){
+    // image de la vidéo
+    fctx.clearRect(0, 0, W, H);
+    if ($("onion").checked){
+      renderFrame(fctx, S.frame);
+      fctx.globalAlpha = .35;
+      for (let f = 0; f < sc.N; f++){ if (f === S.frame) continue; const [x, y] = toPx(sc, sc.pos(f * sc.dt)); sc.obj(fctx, x, y); }
+      fctx.globalAlpha = 1;
+      const [x, y] = toPx(sc, sc.pos(S.frame * sc.dt)); sc.obj(fctx, x, y);
+    } else renderFrame(fctx, S.frame);
+    // horodatage façon caméra
+    fctx.fillStyle = "rgba(0,0,0,.55)"; fctx.beginPath(); fctx.roundRect(W - 168, 10, 158, 26, 6); fctx.fill();
+    fctx.fillStyle = "#fff"; fctx.font = "700 13px ui-monospace, Menlo, monospace"; fctx.textAlign = "left";
+    fctx.fillText(`img ${String(S.frame + 1).padStart(2, "0")}  t=${fmt(S.frame * sc.dt, 2)} s`, W - 160, 28);
+
+    ctx.clearRect(0, 0, W, H);
+    ctx.drawImage(frameCv, 0, 0, W, H);
+    overlays();
+    loupe();
+  }
+  function overlays(){
+    // étalonnage
+    const A = S.calA || S.tempCal, B = S.calB;
+    if (A){
+      ctx.strokeStyle = "#1fb5a0"; ctx.fillStyle = "#1fb5a0"; ctx.lineWidth = 2.5;
+      if (B){ ctx.beginPath(); ctx.moveTo(A[0], A[1]); ctx.lineTo(B[0], B[1]); ctx.stroke(); }
+      for (const p of [A, B]) if (p){ ctx.beginPath(); ctx.arc(p[0], p[1], 4, 0, 7); ctx.fill(); }
+      if (B && S.scale){ ctx.font = "800 12px Inter, sans-serif"; ctx.textAlign = "center"; ctx.fillText(`${fmt(S.scale.len, S.scale.len < 1 ? 2 : 2)} m`, (A[0] + B[0]) / 2, (A[1] + B[1]) / 2 - 10); }
+    }
+    // origine et axes
+    if (S.origin){
+      const [ox, oy] = S.origin;
+      ctx.strokeStyle = "#7a2fb0"; ctx.fillStyle = "#7a2fb0"; ctx.lineWidth = 2;
+      arrow(ox, oy, ox + 70, oy); arrow(ox, oy, ox, oy - 70);
+      ctx.font = "800 13px Inter, sans-serif"; ctx.textAlign = "center";
+      ctx.fillText("x", ox + 78, oy + 4); ctx.fillText("y", ox, oy - 76); ctx.fillText("O", ox - 10, oy + 14);
+    }
+    // points pointés
+    if ($("showPts").checked){
+      S.pts.forEach((p, f) => {
+        if (!p) return;
+        const cur = f === S.frame;
+        ctx.strokeStyle = cur ? "#ffd400" : "#e8590c"; ctx.lineWidth = cur ? 2.4 : 2;
+        ctx.beginPath(); ctx.moveTo(p[0] - 6, p[1] - 6); ctx.lineTo(p[0] + 6, p[1] + 6); ctx.moveTo(p[0] + 6, p[1] - 6); ctx.lineTo(p[0] - 6, p[1] + 6); ctx.stroke();
+      });
+    }
+    // réticule
+    if (hover && !playing){
+      ctx.strokeStyle = "rgba(255,255,255,.55)"; ctx.lineWidth = 1; ctx.setLineDash([4, 4]);
+      ctx.beginPath(); ctx.moveTo(hover[0], 0); ctx.lineTo(hover[0], H); ctx.moveTo(0, hover[1]); ctx.lineTo(W, hover[1]); ctx.stroke();
+      ctx.setLineDash([]);
+    }
+  }
+  function arrow(x1, y1, x2, y2){
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+    const a = Math.atan2(y2 - y1, x2 - x1);
+    ctx.beginPath(); ctx.moveTo(x2, y2); ctx.lineTo(x2 - 9 * Math.cos(a - .4), y2 - 9 * Math.sin(a - .4)); ctx.lineTo(x2 - 9 * Math.cos(a + .4), y2 - 9 * Math.sin(a + .4)); ctx.closePath(); ctx.fill();
+  }
+  // loupe ×3 pour pointer précisément
+  function loupe(){
+    if (!hover || playing) return;
+    const Z = 3, R = 58, src = R / Z;
+    const lx = hover[0] < W - 150 ? W - 70 : 70, ly = hover[1] > 150 ? 70 : H - 70;
+    ctx.save(); ctx.beginPath(); ctx.arc(lx, ly, R, 0, 7); ctx.clip();
+    ctx.fillStyle = "#000"; ctx.fillRect(lx - R, ly - R, 2 * R, 2 * R);
+    ctx.drawImage(frameCv, (hover[0] - src) * dpr, (hover[1] - src) * dpr, 2 * src * dpr, 2 * src * dpr, lx - R, ly - R, 2 * R, 2 * R);
+    ctx.strokeStyle = "#ff3b3b"; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(lx - R, ly); ctx.lineTo(lx + R, ly); ctx.moveTo(lx, ly - R); ctx.lineTo(lx, ly + R); ctx.stroke();
+    ctx.restore();
+    ctx.strokeStyle = "#fff"; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(lx, ly, R, 0, 7); ctx.stroke();
+  }
+
+  // =====================================================================
+  //  Interaction sur la vidéo
+  // =====================================================================
+  function evPt(e){ const r = cv.getBoundingClientRect(); return [(e.clientX - r.left) * W / r.width, (e.clientY - r.top) * H / r.height]; }
+  cv.addEventListener("pointermove", e => { hover = evPt(e); if (!playing) draw(); });
+  cv.addEventListener("pointerleave", () => { hover = null; draw(); });
+  cv.addEventListener("pointerdown", e => {
+    e.preventDefault(); stop();
+    const p = evPt(e); hover = p;
+    if (S.mode === "calib"){
+      if (!S.tempCal || S.calB){ S.tempCal = p; S.calA = null; S.calB = null; S.scale = null; say("info", "Premier point placé. Clique maintenant sur l’<b>autre extrémité</b> de la règle (graduation de fin)."); }
+      else { S.calA = S.tempCal; S.calB = p; S.tempCal = null; say("info", "Indique la longueur réelle entre ces deux points (lis-la sur la règle)."); $("calLen").focus(); }
+    } else if (S.mode === "origin"){
+      if (!S.scale){ say("warn", "Commence par étalonner l’image (étape 1)."); return setMode("calib"); }
+      S.origin = p; say("ok", "Origine placée : l’axe x est horizontal vers la droite, l’axe y vertical vers le haut.");
+      setMode("point"); S.frame = firstEmpty();
+    } else if (S.mode === "point"){
+      if (!S.scale || !S.origin){ say("warn", "Étalonne et place l’origine avant de pointer."); return setMode(S.scale ? "origin" : "calib"); }
+      S.pts[S.frame] = p;
+      const ne = firstEmpty(S.frame + 1);
+      if (ne < sc.N) S.frame = ne;
+      else if (S.pts.filter(Boolean).length === sc.N) say("ok", "Toutes les images sont pointées ! Exploite maintenant le tableau et les graphiques, puis conclus.");
+    }
+    update();
+  });
+  function firstEmpty(from = 0){ for (let f = from; f < sc.N; f++) if (!S.pts[f]) return f; for (let f = 0; f < from; f++) if (!S.pts[f]) return f; return sc.N; }
+
+  $("calOk").addEventListener("click", validateCal);
+  $("calLen").addEventListener("keydown", e => { if (e.key === "Enter") validateCal(); });
+  function validateCal(){
+    if (!S.calA || !S.calB) return say("warn", "Clique d’abord sur les deux extrémités de la règle.");
+    const v = parseFloat($("calLen").value.replace(",", ".")) * parseFloat($("calUnit").value);
+    if (!(v > 0)) return say("warn", "Écris la longueur réelle (exemple : 1 m ou 30 cm).");
+    const dpx = Math.hypot(S.calB[0] - S.calA[0], S.calB[1] - S.calA[1]);
+    S.scale = {len: v, mPerPx: v / dpx};
+    const err = (S.scale.mPerPx * sc.k - 1);
+    if (Math.abs(err) > .05){
+      say("warn", `Étalonnage enregistré, mais il semble imprécis (écart d’environ ${Math.round(Math.abs(err) * 100)} %). As-tu cliqué exactement sur les graduations <b>0</b> et <b>${sc.ruler.cm}</b> de la règle, et bien lu sa longueur ? Tu peux recommencer en recliquant.`);
+    } else say("ok", "Étalonnage réussi. Étape 2 : clique sur l’image pour placer l’<b>origine</b> du repère.");
+    if (Math.abs(err) <= .05) setMode("origin");
+    update();
+  }
+
+  // =====================================================================
+  //  Mesures
+  // =====================================================================
+  function measures(){
+    if (!S.scale || !S.origin) return [];
+    const m = S.scale.mPerPx, [ox, oy] = S.origin, out = [];
+    S.pts.forEach((p, f) => { if (p) out.push({f, t: f * sc.dt, x: (p[0] - ox) * m, y: (oy - p[1]) * m}); });
+    for (let i = 0; i < out.length - 1; i++){
+      const a = out[i], b = out[i + 1], d = Math.hypot(b.x - a.x, b.y - a.y), dt = b.t - a.t;
+      a.d = d; a.v = d / dt; a.tv = (a.t + b.t) / 2;
+    }
+    return out;
+  }
+
+  // =====================================================================
+  //  Interface
+  // =====================================================================
+  const TXT = {
+    calib: ["Étape 1 · Étalonner l’image", () => `<p>Pour convertir les distances de l’image en mètres, clique sur la graduation <b>0</b> de la règle, puis sur sa dernière graduation <b>(${sc.ruler.cm})</b>. Utilise la loupe pour être précis.</p>`],
+    origin: ["Étape 2 · Placer l’origine", () => `<p>Clique sur l’image pour placer l’origine O du repère. Conseil : place-la ${sc.id === "disque" ? "au <b>centre du disque</b>" : "sur la <b>première position</b> de l’objet"}.</p>`],
+    point: ["Étape 3 · Pointer l’objet", () => `<p>Sur chaque image, clique au <b>centre</b> de l’objet (repère en croix). L’image suivante s’affiche automatiquement. Tu peux revenir sur une image pour corriger un point.</p>`]
+  };
+  function setMode(m){ S.mode = m; update(); }
+  function say(type, html){ S.msg = {type, html}; $("msg").innerHTML = `<div class="msg ${type}">${html}</div>`; }
+  function update(){
+    // étapes
+    document.querySelectorAll(".step").forEach(b => {
+      b.setAttribute("aria-pressed", b.dataset.mode === S.mode);
+      const done = b.dataset.mode === "calib" ? !!S.scale : b.dataset.mode === "origin" ? !!S.origin : S.pts.filter(Boolean).length === sc.N;
+      b.classList.toggle("done", done);
+    });
+    $("sTitle").textContent = TXT[S.mode][0];
+    $("sText").innerHTML = TXT[S.mode][1]();
+    $("calibForm").hidden = !(S.mode === "calib" && S.calA && S.calB);
+    $("msg").innerHTML = S.msg ? `<div class="msg ${S.msg.type}">${S.msg.html}</div>` : "";
+    const n = S.pts.filter(Boolean).length;
+    $("chips").innerHTML = `<span class="chip">Δt = ${fmt(sc.dt, 2)} s entre deux images</span>` +
+      (S.scale ? `<span class="chip">Échelle : 1 px ↔ ${fmt(S.scale.mPerPx * 1000, 2)} mm</span>` : "") +
+      `<span class="chip">${n} / ${sc.N} points</span>`;
+    $("undo").disabled = !n; $("clearPts").disabled = !n;
+    // vidéo
+    $("slider").max = sc.N - 1; $("slider").value = S.frame;
+    $("frameinfo").textContent = `Image ${S.frame + 1} / ${sc.N} · t = ${fmt(S.frame * sc.dt, 2)} s`;
+    // scènes
+    document.querySelectorAll(".scene-btn").forEach((b, i) => {
+      b.setAttribute("aria-pressed", i === si);
+      const k = states[i].pts.filter(Boolean).length;
+      b.querySelector(".st").textContent = states[i].solved ? "✓" : k ? `${k}/${SCENES[i].N}` : "";
+    });
+    renderTable(); drawGraph(); draw();
+  }
+  function renderTable(){
+    const M = measures();
+    $("tbody").innerHTML = M.length ? M.map((r, i) => `<tr class="${r.f === S.frame ? "cur" : ""}"><td>M${r.f}</td><td>${fmt(r.t, 2)}</td><td>${fmt(r.x, 3)}</td><td>${fmt(r.y, 3)}</td><td>${r.d !== undefined ? fmt(r.d, 3) : ""}</td><td>${r.v !== undefined ? fmt(r.v, 2) : ""}</td></tr>`).join("")
+      : `<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:1em">${S.scale && S.origin ? "Pointe l’objet sur la vidéo." : "Étalonne et place l’origine pour obtenir les mesures."}</td></tr>`;
+  }
+
+  // =====================================================================
+  //  Graphiques
+  // =====================================================================
+  const gc = $("graph"), g = gc.getContext("2d"), GW = 640, GH = 380;
+  function gfit(){ gc.width = GW * dpr; gc.height = GH * dpr; g.setTransform(dpr, 0, 0, dpr, 0, 0); }
+  function niceStep(range, n = 6){ const raw = range / n, p = Math.pow(10, Math.floor(Math.log10(raw))), f = raw / p; return (f < 1.5 ? 1 : f < 3 ? 2 : f < 7 ? 5 : 10) * p; }
+  function fitLin(P){ const n = P.length; let sx = 0, sy = 0, sxx = 0, sxy = 0; for (const [x, y] of P){ sx += x; sy += y; sxx += x*x; sxy += x*y; } const a = (n*sxy - sx*sy) / (n*sxx - sx*sx); return [a, (sy - a*sx) / n]; }
+  function fitPar(P){
+    let s = [0,0,0,0,0], t = [0,0,0];
+    for (const [x, y] of P){ let xp = 1; for (let k = 0; k < 5; k++){ s[k] += xp; if (k < 3) t[k] += xp * y; xp *= x; } }
+    const A = [[s[4], s[3], s[2], t[2]], [s[3], s[2], s[1], t[1]], [s[2], s[1], s[0], t[0]]];
+    for (let i = 0; i < 3; i++){ let m = i; for (let r = i + 1; r < 3; r++) if (Math.abs(A[r][i]) > Math.abs(A[m][i])) m = r; [A[i], A[m]] = [A[m], A[i]];
+      for (let r = 0; r < 3; r++) if (r !== i){ const f = A[r][i] / A[i][i]; for (let c = i; c < 4; c++) A[r][c] -= f * A[i][c]; } }
+    return [A[0][3] / A[0][0], A[1][3] / A[1][1], A[2][3] / A[2][2]];
+  }
+  function drawGraph(){
+    g.clearRect(0, 0, GW, GH); g.fillStyle = "#fff"; g.fillRect(0, 0, GW, GH);
+    const M = measures();
+    let P, xl, yl, xu, yu;
+    if (graphType === "traj"){ P = M.map(r => [r.x, r.y]); xl = "x"; yl = "y"; xu = "m"; yu = "m"; }
+    else if (graphType === "xt"){ P = M.map(r => [r.t, r.x]); xl = "t"; yl = "x"; xu = "s"; yu = "m"; }
+    else if (graphType === "yt"){ P = M.map(r => [r.t, r.y]); xl = "t"; yl = "y"; xu = "s"; yu = "m"; }
+    else { P = M.filter(r => r.v !== undefined).map(r => [r.tv, r.v]); xl = "t"; yl = "v"; xu = "s"; yu = "m/s"; }
+    const L = 62, R = 18, T = 16, B = 46, pw = GW - L - R, ph = GH - T - B;
+    if (P.length < 2){
+      g.fillStyle = "#7a8f8b"; g.font = "600 14px Inter, sans-serif"; g.textAlign = "center";
+      g.fillText("Pointe au moins deux positions pour tracer le graphique.", GW / 2, GH / 2); $("eq").textContent = ""; return;
+    }
+    let x0 = Math.min(0, ...P.map(p => p[0])), x1 = Math.max(...P.map(p => p[0])), y0 = Math.min(0, ...P.map(p => p[1])), y1 = Math.max(0, ...P.map(p => p[1]));
+    if (graphType === "vt"){ y0 = 0; y1 = Math.max(y1 * 1.25, .1); }
+    if (x1 - x0 < 1e-6) x1 = x0 + .1; if (y1 - y0 < 1e-6){ y1 += .05; y0 -= .05; }
+    let sx = pw / (x1 - x0), sy = ph / (y1 - y0);
+    if (graphType === "traj"){             // repère orthonormé
+      const s = Math.min(sx, sy); sx = sy = s;
+      const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
+      x0 = cx - pw / s / 2; x1 = cx + pw / s / 2; y0 = cy - ph / s / 2; y1 = cy + ph / s / 2;
+    } else { const px = (x1 - x0) * .06, py = (y1 - y0) * .08; x1 += px; y1 += py; if (y0 < 0) y0 -= py; sx = pw / (x1 - x0); sy = ph / (y1 - y0); }
+    const X = v => L + (v - x0) * sx, Y = v => T + ph - (v - y0) * sy;
+    // grille
+    const stx = niceStep(x1 - x0), sty = niceStep(y1 - y0, 5);
+    g.font = "11px Inter, sans-serif"; g.fillStyle = "#4f6b66"; g.strokeStyle = "#e3ecea"; g.lineWidth = 1;
+    const dec = s => Math.max(0, -Math.floor(Math.log10(s) + 1e-9));
+    for (let v = Math.ceil(x0 / stx) * stx; v <= x1 + 1e-9; v += stx){ g.beginPath(); g.moveTo(X(v), T); g.lineTo(X(v), T + ph); g.stroke(); g.textAlign = "center"; g.fillText(fmt(v, dec(stx)), X(v), T + ph + 15); }
+    for (let v = Math.ceil(y0 / sty) * sty; v <= y1 + 1e-9; v += sty){ g.beginPath(); g.moveTo(L, Y(v)); g.lineTo(L + pw, Y(v)); g.stroke(); g.textAlign = "right"; g.fillText(fmt(v, dec(sty)), L - 6, Y(v) + 4); }
+    g.strokeStyle = "#16302c"; g.lineWidth = 1.4;
+    g.beginPath(); g.moveTo(L, T); g.lineTo(L, T + ph); g.lineTo(L + pw, T + ph); g.stroke();
+    if (y0 < 0 && y1 > 0){ g.strokeStyle = "#9fb3ae"; g.beginPath(); g.moveTo(L, Y(0)); g.lineTo(L + pw, Y(0)); g.stroke(); }
+    g.fillStyle = "#16302c"; g.font = "700 12px Inter, sans-serif"; g.textAlign = "center";
+    g.fillText(`${xl} (${xu})`, L + pw / 2, GH - 8);
+    g.save(); g.translate(15, T + ph / 2); g.rotate(-Math.PI / 2); g.fillText(`${yl} (${yu})`, 0, 0); g.restore();
+    // modèle
+    let eq = "";
+    if (model !== "none" && P.length >= (model === "par" ? 3 : 2)){
+      const f = model === "lin" ? fitLin(P) : fitPar(P);
+      const fn = model === "lin" ? (u => f[0] * u + f[1]) : (u => f[0] * u * u + f[1] * u + f[2]);
+      g.save(); g.beginPath(); g.rect(L, T, pw, ph); g.clip();
+      g.strokeStyle = "#7a2fb0"; g.lineWidth = 2; g.beginPath();
+      for (let i = 0; i <= 200; i++){ const u = x0 + (x1 - x0) * i / 200; i ? g.lineTo(X(u), Y(fn(u))) : g.moveTo(X(u), Y(fn(u))); }
+      g.stroke(); g.restore();
+      const sg = v => (v < 0 ? " − " : " + ") + fmt(Math.abs(v), 3);
+      eq = model === "lin" ? `Modèle : ${yl} = ${fmt(f[0], 3)} × ${xl}${sg(f[1])}` + (graphType === "xt" || graphType === "yt" ? `   → coefficient directeur ≈ ${fmt(f[0], 3)} m/s` : "")
+                           : `Modèle : ${yl} = ${fmt(f[0], 3)} × ${xl}²${sg(f[1])} × ${xl}${sg(f[2])}`;
+    }
+    $("eq").textContent = eq;
+    // points
+    g.strokeStyle = "#e8590c"; g.lineWidth = 2;
+    for (const [u, v] of P){ const px = X(u), py = Y(v); g.beginPath(); g.moveTo(px - 5, py - 5); g.lineTo(px + 5, py + 5); g.moveTo(px + 5, py - 5); g.lineTo(px - 5, py + 5); g.stroke(); }
+  }
+  document.querySelectorAll("#gType button").forEach(b => b.addEventListener("click", () => { graphType = b.dataset.g; document.querySelectorAll("#gType button").forEach(x => x.setAttribute("aria-pressed", x === b)); drawGraph(); }));
+  document.querySelectorAll("#gModel button").forEach(b => b.addEventListener("click", () => { model = b.dataset.m; document.querySelectorAll("#gModel button").forEach(x => x.setAttribute("aria-pressed", x === b)); drawGraph(); }));
+
+  // =====================================================================
+  //  Conclusion
+  // =====================================================================
+  const NAMES = {rect:"rectiligne", circ:"circulaire", curv:"curviligne", const:"uniforme", aug:"accéléré", dim:"ralenti (décéléré)", dimaug:"non uniforme (la vitesse varie)"};
+  $("check").addEventListener("click", () => {
+    const tr = (document.querySelector('input[name="traj"]:checked') || {}).value, vi = (document.querySelector('input[name="vit"]:checked') || {}).value;
+    const n = S.pts.filter(Boolean).length;
+    if (n < Math.min(6, sc.N)) return $("result").innerHTML = `<div class="msg warn">Pointe au moins 6 positions avant de conclure : ta conclusion doit s’appuyer sur l’enregistrement.</div>`;
+    if (!tr || !vi) return $("result").innerHTML = `<div class="msg warn">Réponds aux questions 1 et 2.</div>`;
+    const T = sc.truth, okT = tr === T.traj, okV = vi === T.vit;
+    const M = measures().filter(r => r.v !== undefined), vs = M.map(r => r.v);
+    const stat = vs.length ? ` Dans ton tableau, v varie de ${fmt(Math.min(...vs), 2)} à ${fmt(Math.max(...vs), 2)} m/s.` : "";
+    let html;
+    if (okT && okV){
+      states[si].solved = true;
+      html = `<div class="msg ok"><b>Bravo !</b> Le mouvement est <b>${NAMES[T.traj]} ${NAMES[T.vit]}</b> dans le référentiel du sol.<br>${sc.expl}${stat}</div>`;
+    } else {
+      const parts = [];
+      if (!okT) parts.push(`la <b>trajectoire</b> : regarde la forme dessinée par les points (graphique « Trajectoire y(x) »)`);
+      if (!okV) parts.push(`la <b>vitesse</b> : compare les distances entre deux points successifs (colonne d) ou regarde le graphique v(t)`);
+      html = `<div class="msg bad">Revois ${parts.join(" et ")}.${okT ? " La trajectoire est correcte." : ""}${okV ? " La conclusion sur la vitesse est correcte." : ""}</div>`;
+    }
+    $("result").innerHTML = html; update();
+  });
+
+  // =====================================================================
+  //  Commandes
+  // =====================================================================
+  function stop(){ if (playing){ clearInterval(playing); playing = null; $("play").textContent = "▶ Lecture"; } }
+  $("play").addEventListener("click", () => {
+    if (playing) return stop();
+    $("play").textContent = "⏸ Pause";
+    if (S.frame >= sc.N - 1) S.frame = 0;
+    playing = setInterval(() => { S.frame++; if (S.frame >= sc.N - 1){ S.frame = sc.N - 1; stop(); } update(); }, 220);
+  });
+  const go = f => { stop(); S.frame = Math.max(0, Math.min(sc.N - 1, f)); update(); };
+  $("first").addEventListener("click", () => go(0));
+  $("prev").addEventListener("click", () => go(S.frame - 1));
+  $("next").addEventListener("click", () => go(S.frame + 1));
+  $("slider").addEventListener("input", e => go(+e.target.value));
+  document.addEventListener("keydown", e => {
+    if (/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
+    if (e.key === "ArrowLeft"){ e.preventDefault(); go(S.frame - 1); }
+    if (e.key === "ArrowRight"){ e.preventDefault(); go(S.frame + 1); }
+  });
+  document.querySelectorAll(".step").forEach(b => b.addEventListener("click", () => { S.msg = null; setMode(b.dataset.mode); }));
+  $("showPts").addEventListener("change", draw);
+  $("onion").addEventListener("change", draw);
+  $("undo").addEventListener("click", () => {
+    let last = -1; S.pts.forEach((p, f) => { if (p) last = Math.max(last, f); });
+    // annule le dernier point placé dans l’ordre des images
+    if (last >= 0){ S.pts[last] = undefined; S.frame = last; update(); }
+  });
+  $("clearPts").addEventListener("click", () => { if (confirm("Effacer tous les points de cet enregistrement ?")){ S.pts = []; S.frame = 0; update(); } });
+  $("csv").addEventListener("click", () => {
+    const M = measures(); if (!M.length) return;
+    const n = v => v === undefined ? "" : String(+v.toFixed(4)).replace(".", ",");
+    const lines = ["point;t (s);x (m);y (m);d (m);v (m/s)"].concat(M.map(r => [`M${r.f}`, n(r.t), n(r.x), n(r.y), n(r.d), n(r.v)].join(";")));
+    const blob = new Blob(["﻿" + lines.join("\n")], {type:"text/csv;charset=utf-8"});
+    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `pointage-${sc.id}.csv`; a.click(); URL.revokeObjectURL(a.href);
+  });
+  $("auto").addEventListener("click", () => {
+    const r = sc.ruler;
+    S.calA = [r.x1, r.y1]; S.calB = [r.x2, r.y2]; S.tempCal = null;
+    S.scale = {len: r.cm / 100, mPerPx: (r.cm / 100) / Math.hypot(r.x2 - r.x1, r.y2 - r.y1)};
+    const o = sc.id === "disque" ? {x:0, y:0} : sc.pos(0);
+    S.origin = toPx(sc, o);
+    for (let f = 0; f < sc.N; f++){ const [x, y] = toPx(sc, sc.pos(f * sc.dt)); S.pts[f] = [x + (Math.random() - .5) * 1.5, y + (Math.random() - .5) * 1.5]; }
+    S.mode = "point"; S.frame = sc.N - 1; say("info", "Pointage automatique effectué (démonstration).");
+    update();
+  });
+
+  // choix de l’enregistrement
+  $("scenes").innerHTML = SCENES.map((s, i) => `<button class="scene-btn" type="button" data-i="${i}"><span class="ic">${s.icon}</span><span><b>${s.name}</b><small>${s.sub} · ${s.N} images</small></span><span class="st"></span></button>`).join("");
+  document.querySelectorAll(".scene-btn").forEach(b => b.addEventListener("click", () => {
+    stop(); si = +b.dataset.i; S = states[si]; sc = SCENES[si];
+    document.querySelectorAll('input[name="traj"],input[name="vit"]').forEach(x => x.checked = false);
+    $("result").innerHTML = ""; $("calLen").value = ""; $("justif").value = S.justif || "";
+    update();
+  }));
+  $("justif").addEventListener("input", e => { S.justif = e.target.value; });
+
+  // anciens navigateurs : roundRect
+  if (!CanvasRenderingContext2D.prototype.roundRect){
+    CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r){
+      r = Math.min(Array.isArray(r) ? r[0] : r, w / 2, h / 2);
+      this.moveTo(x + r, y); this.arcTo(x + w, y, x + w, y + h, r); this.arcTo(x + w, y + h, x, y + h, r);
+      this.arcTo(x, y + h, x, y, r); this.arcTo(x, y, x + w, y, r); this.closePath();
+    };
+  }
+  addEventListener("resize", fit);
+  fit(); update();
+})();
+</script>
+</body>
+</html>
