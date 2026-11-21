@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Les ondes électromagnétiques | Laboratoire virtuel</title>
+<style>
+  :root{--ink:#16302c;--muted:#4f6b66;--teal:#1f6f66;--teal-d:#14564e;--bg:#eef3f2;--line:#d3e2df;--soft:#e8f2f0;--ok:#1d7f54;--bad:#b4400f}
+  *{box-sizing:border-box}
+  [hidden]{display:none!important}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.45}
+  header,main{max-width:1200px;margin:0 auto;padding:0 18px}
+  header{padding-top:16px}
+  .kicker{margin:0;color:var(--teal);font-weight:700;font-size:.85rem}
+  h1{margin:.05em 0 .15em;font-size:clamp(1.8rem,4vw,2.5rem);letter-spacing:-.03em;line-height:1.05}
+  .lead{margin:0 0 14px;color:var(--muted);max-width:80ch}
+  .tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+  .tab{font:inherit;text-align:left;border:1.5px solid var(--line);background:#fff;border-radius:14px;padding:10px 14px;cursor:pointer;display:flex;gap:10px;align-items:center;transition:all .18s}
+  .tab:hover{border-color:var(--teal)}
+  .tab[aria-selected="true"]{border-color:var(--teal);background:var(--soft);box-shadow:inset 0 0 0 1px var(--teal)}
+  .tab .n{display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:#edf1f0;font-weight:800;flex:none}
+  .tab[aria-selected="true"] .n{background:var(--teal);color:#fff}
+  .tab b{display:block}
+  .tab small{color:var(--muted)}
+  .card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:16px 18px;margin-bottom:16px}
+  h2{font-size:1.15rem;margin:0 0 6px}
+  h3{font-size:1rem;margin:0 0 6px}
+  .consigne{background:#163f3a;color:#fff;border-radius:12px;padding:10px 14px;margin-bottom:12px;font-size:.95rem}
+  .consigne b{color:#ffd166}
+  .btn{font:inherit;font-weight:650;font-size:.92rem;border-radius:10px;border:1px solid var(--line);background:#fff;color:var(--ink);padding:.5em .85em;cursor:pointer}
+  .btn:hover{border-color:var(--teal);background:var(--soft)}
+  .btn.primary{background:var(--teal);border-color:var(--teal);color:#fff}
+  .btn.primary:hover{background:var(--teal-d)}
+  .btn:focus-visible,.tab:focus-visible,.item:focus-visible,.zone:focus-visible{outline:3px solid #8fd3c7;outline-offset:2px}
+  .msg{padding:10px 12px;border-radius:10px;border-left:4px solid var(--teal);background:var(--soft);font-size:.93rem;margin-top:10px}
+  .msg.ok{border-color:var(--ok);background:#e6f4ec}
+  .msg.bad{border-color:var(--bad);background:#fbeee6}
+  .msg.warn{border-color:#c48a0c;background:#fbf4e1}
+
+  /* spectre */
+  .spec{position:relative;user-select:none;-webkit-user-select:none;touch-action:none}
+  .spec-axis{display:flex;justify-content:space-between;font-size:.75rem;color:var(--muted);margin:2px 0}
+  .bar{display:flex;height:64px;border-radius:12px;overflow:hidden;border:1px solid #b9cbc7;cursor:pointer}
+  .seg{position:relative;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:750;color:#fff;text-align:center;line-height:1.1;padding:2px;text-shadow:0 1px 2px rgba(0,0,0,.45)}
+  .seg+.seg{border-left:1px solid rgba(255,255,255,.6)}
+  .cursor{position:absolute;top:18px;width:4px;height:72px;margin-left:-2px;background:#111;border-radius:2px;pointer-events:none;box-shadow:0 0 0 2px #fff}
+  .cursor::before{content:"";position:absolute;top:-10px;left:-7px;border:9px solid transparent;border-top-color:#111}
+  .scalehint{font-size:.78rem;color:var(--muted);margin-top:4px}
+  .explore{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(280px,1fr);gap:16px;margin-top:16px;align-items:start}
+  canvas{display:block;width:100%;border-radius:12px}
+  #wave{aspect-ratio:640/220;background:#0f1d1c}
+  .vals{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+  .val{background:var(--soft);border-radius:12px;padding:8px 12px}
+  .val small{display:block;color:var(--muted);font-size:.8rem;font-weight:650}
+  .val b{font-size:1.25rem;font-variant-numeric:tabular-nums}
+  .relation{text-align:center;font-weight:700;margin-top:10px;font-size:1.05rem}
+  .relation small{display:block;font-weight:500;color:var(--muted);font-size:.82rem}
+  .domain-name{font-size:1.5rem;font-weight:800;margin:0 0 6px;display:flex;gap:10px;align-items:center}
+  .swatch{width:22px;height:22px;border-radius:6px;flex:none;border:1px solid rgba(0,0,0,.15)}
+  .info dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:6px 10px;font-size:.93rem}
+  .info dt{font-weight:700;color:var(--teal-d)}
+  .info dd{margin:0}
+  .danger{margin-top:10px;padding:8px 12px;border-radius:10px;font-size:.9rem}
+  .presets{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+  .preset{font:inherit;font-size:.84rem;border:1px solid var(--line);background:#fff;border-radius:999px;padding:.3em .7em;cursor:pointer}
+  .preset:hover{border-color:var(--teal);background:var(--soft)}
+  input[type=range]{width:100%;accent-color:var(--teal);margin-top:10px}
+
+  /* activité 2 */
+  .zones{display:flex;border-radius:12px;overflow:hidden;border:1px solid #b9cbc7;min-height:210px}
+  .zone{display:flex;flex-direction:column;align-items:stretch;gap:6px;padding:6px;min-width:0;transition:outline .1s, filter .15s}
+  .zone+.zone{border-left:2px solid #fff}
+  .zone .zt{font-weight:800;font-size:.8rem;color:#fff;text-align:center;text-shadow:0 1px 2px rgba(0,0,0,.5);padding:2px 0}
+  .zone.over{filter:brightness(1.15);outline:3px solid #ffd166;outline-offset:-3px}
+  .tray{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;min-height:60px;padding:10px;border:2px dashed var(--line);border-radius:12px;background:#fafcfc}
+  .item{font:inherit;background:#fff;border:1.5px solid #b9cbc7;border-radius:12px;padding:6px 10px;cursor:grab;display:flex;gap:8px;align-items:center;touch-action:none;user-select:none;box-shadow:0 1px 3px rgba(0,0,0,.08);font-size:.86rem;text-align:left}
+  .item .em{font-size:1.4rem}
+  .item b{display:block;font-size:.86rem}
+  .item small{color:var(--muted);font-variant-numeric:tabular-nums;font-weight:650}
+  .item.sel{border-color:#e8590c;box-shadow:0 0 0 3px rgba(232,89,12,.25)}
+  .item.placed{cursor:default;border-color:var(--ok);background:#f2fbf6;padding:4px 6px;font-size:.75rem}
+  .item.placed .em{font-size:1.05rem}
+  .item.placed b{font-size:.74rem}
+  .item.dragging{position:fixed;z-index:50;pointer-events:none;box-shadow:0 8px 20px rgba(0,0,0,.25)}
+  .item.shake{animation:shake .4s}
+  @keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+  .help2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+  .prefix{width:100%;border-collapse:collapse;font-size:.88rem}
+  .prefix td,.prefix th{border-bottom:1px solid var(--line);padding:.3em .4em;text-align:left}
+  .calc{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .calc input,.calc select{font:inherit;padding:.45em .6em;border:1.5px solid var(--line);border-radius:9px}
+  .calc input{width:8em}
+  .score{font-weight:800;color:var(--teal-d)}
+
+  /* activité 3 */
+  .q{font-size:1.1rem;margin:.3em 0 .8em}
+  .steps3{margin:.4em 0 .8em;padding-left:1.2em;color:var(--muted);font-size:.93rem}
+  input.good{border-color:var(--ok)!important;background:#f1faf5}
+  input.wrong{border-color:var(--bad)!important;background:#fdf5f0}
+  @media (max-width:900px){.explore,.help2{grid-template-columns:1fr}.tabs{grid-template-columns:1fr}.seg{font-size:.66rem}.zone .zt{font-size:.66rem}}
+</style>
+</head>
+<body>
+<header>
+  <p class="kicker">Physique-chimie · Première professionnelle · Signaux</p>
+  <h1>Les ondes électromagnétiques</h1>
+  <p class="lead">La lumière, le wifi, les rayons X ou la télécommande de la télé utilisent tous des <b>ondes électromagnétiques</b>. Elles se propagent même dans le vide, à la vitesse de la lumière <b>c = 3,00 × 10⁸ m/s</b>. Ce qui les distingue : leur <b>longueur d’onde λ</b> (ou leur <b>fréquence f</b>).</p>
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" data-t="1" aria-selected="true"><span class="n">1</span><span><b>Explorer le spectre</b><small>λ, f et domaines</small></span></button>
+    <button class="tab" role="tab" data-t="2" aria-selected="false"><span class="n">2</span><span><b>Objets du quotidien</b><small>placer sur le spectre</small></span></button>
+    <button class="tab" role="tab" data-t="3" aria-selected="false"><span class="n">3</span><span><b>Je calcule λ = c / f</b><small>entraînement</small></span></button>
+  </div>
+</header>
+
+<main>
+  <!-- ===================== ACTIVITÉ 1 ===================== -->
+  <section id="t1">
+    <div class="card">
+      <div class="consigne">🔎 <b>Déplace le curseur</b> sur le spectre (ou utilise les boutons d’exemples). Observe comment changent l’onde, sa longueur d’onde λ, sa fréquence f et le domaine.</div>
+      <div class="spec" id="spec1">
+        <div class="spec-axis"><span>← λ petite · f grande · plus énergétique</span><span>λ grande · f petite · moins énergétique →</span></div>
+        <div class="bar" id="bar1"></div>
+        <div class="cursor" id="cur1"></div>
+      </div>
+      <input type="range" id="slider" min="0" max="1000" value="500" aria-label="Position sur le spectre">
+      <p class="scalehint">⚠️ Échelle non régulière : chaque domaine est agrandi pour être lisible (en réalité, le visible est une toute petite partie du spectre).</p>
+      <div class="presets" id="presets"></div>
+    </div>
+    <div class="explore">
+      <div class="card">
+        <h2>L’onde</h2>
+        <canvas id="wave" width="640" height="220" aria-label="Représentation de l’onde"></canvas>
+        <div class="vals">
+          <div class="val"><small>Longueur d’onde λ</small><b id="vLam"></b></div>
+          <div class="val"><small>Fréquence f</small><b id="vF"></b></div>
+        </div>
+        <div class="relation">λ = c ÷ f<small id="relDetail"></small></div>
+      </div>
+      <div class="card info">
+        <p class="domain-name"><span class="swatch" id="sw"></span><span id="dName"></span></p>
+        <dl>
+          <dt>Sources</dt><dd id="dSrc"></dd>
+          <dt>Détecteurs</dt><dd id="dDet"></dd>
+          <dt>Utilisations</dt><dd id="dUse"></dd>
+        </dl>
+        <div class="danger" id="dDanger"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== ACTIVITÉ 2 ===================== -->
+  <section id="t2" hidden>
+    <div class="card">
+      <div class="consigne">🧩 <b>Fais glisser chaque objet</b> dans le bon domaine du spectre (ou clique sur un objet, puis sur un domaine). Quand on donne la <b>fréquence</b>, calcule d’abord <b>λ = c ÷ f</b> avec la calculatrice en bas.</div>
+      <div class="zones" id="zones"></div>
+      <p class="scalehint">λ augmente de gauche à droite. Limites approximatives : γ &lt; 10 pm · X &lt; 10 nm · UV &lt; 400 nm · visible 400–800 nm · IR &lt; 1 mm · micro-ondes &lt; 1 m · ondes radio au-delà.</p>
+      <div class="tray" id="tray" aria-label="Objets à placer"></div>
+      <div id="msg2"></div>
+      <p class="score" id="score2"></p>
+      <button class="btn" id="reset2" type="button">↺ Recommencer</button>
+    </div>
+    <div class="help2">
+      <div class="card">
+        <h3>🧮 Calculatrice λ = c ÷ f</h3>
+        <div class="calc">
+          <label for="cf">f =</label><input id="cf" type="text" inputmode="decimal" placeholder="2,4">
+          <select id="cfu"><option value="1">Hz</option><option value="1e3">kHz</option><option value="1e6">MHz</option><option value="1e9" selected>GHz</option></select>
+          <button class="btn primary" id="cgo" type="button">Calculer λ</button>
+        </div>
+        <p id="cres" style="margin:.6em 0 0;font-weight:700"></p>
+      </div>
+      <div class="card">
+        <h3>📐 Préfixes utiles</h3>
+        <table class="prefix">
+          <tr><th>Fréquence</th><th>Longueur</th></tr>
+          <tr><td>1 kHz = 10³ Hz</td><td>1 mm = 10⁻³ m</td></tr>
+          <tr><td>1 MHz = 10⁶ Hz</td><td>1 µm = 10⁻⁶ m</td></tr>
+          <tr><td>1 GHz = 10⁹ Hz</td><td>1 nm = 10⁻⁹ m</td></tr>
+          <tr><td></td><td>1 pm = 10⁻¹² m</td></tr>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== ACTIVITÉ 3 ===================== -->
+  <section id="t3" hidden>
+    <div class="card">
+      <div class="consigne">✏️ Réponds aux questions. Méthode : <b>1)</b> convertis en unités de base (Hz ou m) <b>2)</b> applique <b>λ = c ÷ f</b> ou <b>f = c ÷ λ</b> avec c = 3,00 × 10⁸ m/s <b>3)</b> trouve le domaine.</div>
+      <p class="q" id="q3"></p>
+      <ol class="steps3">
+        <li>Calcule la grandeur demandée.</li>
+        <li>Indique à quel domaine du spectre appartient l’onde.</li>
+      </ol>
+      <div class="calc">
+        <label for="a3" id="a3lab"></label><input id="a3" type="text" inputmode="decimal" placeholder="ex. 0,125 ou 1,25e-1">
+        <select id="a3u"></select>
+      </div>
+      <div class="calc" style="margin-top:8px">
+        <label for="d3">Domaine :</label>
+        <select id="d3"><option value="">— choisir —</option></select>
+        <button class="btn primary" id="check3" type="button">Vérifier</button>
+        <button class="btn" id="next3" type="button">Question suivante →</button>
+      </div>
+      <p class="kbd" style="font-size:.84rem;color:var(--muted)">Astuce : tu peux écrire les puissances de 10 avec « e » : 3e8 signifie 3 × 10⁸.</p>
+      <div id="msg3"></div>
+      <p class="score" id="score3"></p>
+    </div>
+  </section>
+</main>
+
+<script>
+(() => {
+  "use strict";
+  const $ = id => document.getElementById(id);
+  const C = 3.00e8;
+  const SUP = {"-":"⁻","0":"⁰","1":"¹","2":"²","3":"³","4":"⁴","5":"⁵","6":"⁶","7":"⁷","8":"⁸","9":"⁹"};
+  const sup = n => String(n).split("").map(ch => SUP[ch]).join("");
+  const num = (x, sig = 3) => { let s = Number(x.toPrecision(sig)).toString(); if (s.includes("e")) s = Number(x).toFixed(2); return s.replace(".", ","); };
+  const sci = x => { const e = Math.floor(Math.log10(x)), m = x / Math.pow(10, e); return `${num(m)} × 10${sup(e)}`; };
+  function fmtLen(m){
+    const U = [[1e3,"km"],[1,"m"],[1e-2,"cm"],[1e-3,"mm"],[1e-6,"µm"],[1e-9,"nm"],[1e-12,"pm"],[1e-15,"fm"]];
+    for (const [u, n] of U) if (m >= u * .9995) return `${num(m / u)} ${n}`;
+    return `${sci(m)} m`;
+  }
+  function fmtF(f){
+    if (f >= 1e12) return `${sci(f)} Hz`;
+    const U = [[1e9,"GHz"],[1e6,"MHz"],[1e3,"kHz"],[1,"Hz"]];
+    for (const [u, n] of U) if (f >= u * .9995) return `${num(f / u)} ${n}`;
+    return `${num(f)} Hz`;
+  }
+
+  // ---------- Domaines (λ en m, du plus petit au plus grand) ----------
+  const L = Math.log10;
+  const D = [
+    {id:"gamma", low:"rayons gamma", name:"Rayons gamma (γ)", short:"γ gamma", lo:-13, hi:-11, w:12, col:"#5b2a86",
+      src:"Substances radioactives, réactions nucléaires, étoiles", det:"Compteur Geiger, détecteurs à scintillation",
+      use:"Radiothérapie (traitement des cancers), stérilisation du matériel médical",
+      danger:"☢️ <b>Très dangereux</b> : rayonnement ionisant, il traverse le corps et abîme les cellules. Protection : écrans de plomb ou de béton, distance, temps d’exposition limité.", lvl:3},
+    {id:"x", low:"rayons X", name:"Rayons X", short:"X", lo:-11, hi:-8, w:13, col:"#3d3fa8",
+      src:"Tube à rayons X (radiographie, scanner)", det:"Film radiographique, capteur numérique, dosimètre",
+      use:"Radiographie médicale et dentaire, contrôle des bagages à l’aéroport",
+      danger:"☢️ <b>Dangereux</b> : rayonnement ionisant. Protection : tablier plombé, le manipulateur sort de la salle, dosimètre.", lvl:3},
+    {id:"uv", low:"ultraviolets (UV)", name:"Ultraviolets (UV)", short:"UV", lo:-8, hi:L(4e-7), w:12, col:"#7b3fd1",
+      src:"Soleil, lampe UV (« lumière noire »), lampe à souder", det:"Capteur UV, encres fluorescentes, la peau (coup de soleil)",
+      use:"Stérilisation de l’eau, détection des faux billets, séchage des vernis",
+      danger:"⚠️ <b>Dangereux pour la peau et les yeux</b> : coups de soleil, cancers de la peau, cataracte. Protection : crème solaire, lunettes filtrantes, vêtements.", lvl:2},
+    {id:"vis", low:"lumière visible", name:"Lumière visible", short:"Visible", lo:L(4e-7), hi:L(8e-7), w:14, col:"linear-gradient(90deg,#7a00ff,#0044ff,#00c8ff,#00e000,#ffee00,#ff8800,#ff0000)",
+      src:"Soleil, lampes (DEL), écrans, laser", det:"L’œil humain, capteur d’appareil photo, photodiode",
+      use:"Voir, éclairer, transmettre des informations par fibre optique",
+      danger:"⚠️ Ne jamais regarder le Soleil ni un faisceau <b>laser</b> : risque de brûlure de la rétine. Protection : lunettes adaptées.", lvl:1},
+    {id:"ir", low:"infrarouges (IR)", name:"Infrarouges (IR)", short:"IR", lo:L(8e-7), hi:-3, w:16, col:"#b8322a",
+      src:"Tous les corps chauds (corps humain, radiateur), DEL de télécommande", det:"Caméra thermique, récepteur de la télé, détecteur de présence",
+      use:"Télécommandes, chauffage, caméras thermiques (pompiers, bâtiment)",
+      danger:"Risque de brûlure seulement si le rayonnement est très intense (four, soudure).", lvl:1},
+    {id:"mo", low:"micro-ondes", name:"Micro-ondes", short:"Micro-ondes", lo:-3, hi:0, w:15, col:"#c77b12",
+      src:"Box wifi, téléphone portable, four à micro-ondes, radar", det:"Antennes (téléphone, box, ordinateur)",
+      use:"Wifi (2,4 et 5 GHz), téléphonie 4G/5G, Bluetooth, four, radar routier",
+      danger:"Effet d’échauffement des tissus si très intense : le four est une « cage » métallique qui retient les ondes. Pour les téléphones, l’exposition est limitée par la loi (DAS).", lvl:1},
+    {id:"radio", low:"ondes radio", name:"Ondes radio (hertziennes)", short:"Ondes radio", lo:0, hi:4, w:18, col:"#2f8f4a",
+      src:"Émetteurs de radio FM et de TV (TNT), lecteur de badge RFID", det:"Antenne d’un poste de radio, d’une télé, badge RFID",
+      use:"Radio FM (≈ 100 MHz), télévision TNT, badges et cartes sans contact (RFID 13,56 MHz)",
+      danger:"Pas d’effet connu sur la santé aux niveaux d’exposition habituels.", lvl:0}
+  ];
+  const TOTW = D.reduce((s, d) => s + d.w, 0);
+  // position (0–1) ↔ log10(λ), échelle par morceaux
+  function posToLog(p){
+    let acc = 0;
+    for (const d of D){ const w = d.w / TOTW; if (p <= acc + w || d === D[D.length - 1]) return d.lo + (d.hi - d.lo) * Math.min(1, (p - acc) / w); acc += w; }
+  }
+  function logToPos(lg){
+    let acc = 0;
+    for (const d of D){ const w = d.w / TOTW; if (lg <= d.hi || d === D[D.length - 1]) return acc + w * Math.max(0, Math.min(1, (lg - d.lo) / (d.hi - d.lo))); acc += w; }
+  }
+  const domainOf = lam => { const lg = L(lam); return D.find(d => lg < d.hi) || D[D.length - 1]; };
+  function visColor(nm){
+    let r = 0, g = 0, b = 0;
+    if (nm < 440){ r = -(nm - 440) / 40; b = 1; } else if (nm < 490){ g = (nm - 440) / 50; b = 1; }
+    else if (nm < 510){ g = 1; b = -(nm - 510) / 20; } else if (nm < 580){ r = (nm - 510) / 70; g = 1; }
+    else if (nm < 645){ r = 1; g = -(nm - 645) / 65; } else r = 1;
+    let k = nm < 420 ? .3 + .7 * (nm - 400) / 20 : nm > 700 ? .3 + .7 * (800 - nm) / 100 : 1;
+    k = Math.max(.25, Math.min(1, k));
+    return `rgb(${Math.round(255 * r * k)},${Math.round(255 * g * k)},${Math.round(255 * b * k)})`;
+  }
+  const solid = d => d.id === "vis" ? "#2a9d3c" : d.col;
+
+  // ---------- Barres du spectre ----------
+  function buildBar(el){
+    el.innerHTML = D.map(d => `<div class="seg" style="flex:${d.w};background:${d.col}">${d.short}</div>`).join("");
+  }
+  buildBar($("bar1"));
+
+  // ===================== ACTIVITÉ 1 =====================
+  const wave = $("wave"), wc = wave.getContext("2d");
+  let lam = 5.5e-7, phase = 0, dpr = 1;
+  function fitWave(){ dpr = Math.min(devicePixelRatio || 1, 2); wave.width = 640 * dpr; wave.height = 220 * dpr; wc.setTransform(dpr, 0, 0, dpr, 0, 0); }
+  fitWave(); addEventListener("resize", fitWave);
+  function setPos(p){
+    p = Math.max(0, Math.min(1, p));
+    lam = Math.pow(10, posToLog(p));
+    $("slider").value = Math.round(p * 1000);
+    $("cur1").style.left = (p * 100) + "%";
+    const d = domainOf(lam), f = C / lam;
+    $("vLam").textContent = fmtLen(lam);
+    $("vF").textContent = fmtF(f);
+    $("relDetail").textContent = `λ = 3,00 × 10⁸ ÷ ${sci(f)} = ${fmtLen(lam)}`;
+    $("dName").textContent = d.name;
+    $("sw").style.background = d.id === "vis" ? visColor(lam * 1e9) : d.col;
+    $("dSrc").textContent = d.src; $("dDet").textContent = d.det; $("dUse").textContent = d.use;
+    $("dDanger").innerHTML = d.danger;
+    $("dDanger").style.background = ["#eef6ef","#f4f7f6","#fbf1e1","#fbe6e1"][d.lvl];
+  }
+  const spec1 = $("spec1"), bar1 = $("bar1");
+  let dragging = false;
+  const fromEvent = e => { const r = bar1.getBoundingClientRect(); return (e.clientX - r.left) / r.width; };
+  bar1.addEventListener("pointerdown", e => { dragging = true; bar1.setPointerCapture(e.pointerId); setPos(fromEvent(e)); });
+  bar1.addEventListener("pointermove", e => { if (dragging) setPos(fromEvent(e)); });
+  bar1.addEventListener("pointerup", () => dragging = false);
+  $("slider").addEventListener("input", e => setPos(e.target.value / 1000));
+  const PRESETS = [["☢️ Radiothérapie", 1e-12], ["🦴 Radiographie", 1e-10], ["☀️ UV du Soleil", 3.2e-7], ["🔵 Bleu", 4.7e-7], ["🟢 Vert", 5.3e-7], ["🔴 Laser rouge", 6.5e-7], ["📺 Télécommande", 9.4e-7], ["🌡️ Corps humain", 1e-5], ["📶 Wifi 2,4 GHz", C / 2.4e9], ["📱 4G 800 MHz", C / 8e8], ["📻 Radio FM 100 MHz", 3], ["💳 Badge RFID", C / 13.56e6]];
+  $("presets").innerHTML = PRESETS.map(([n, l], i) => `<button class="preset" data-i="${i}" type="button">${n}</button>`).join("");
+  document.querySelectorAll(".preset").forEach(b => b.addEventListener("click", () => setPos(logToPos(L(PRESETS[+b.dataset.i][1])))));
+  function drawWave(){
+    const W = 640, H = 220, d = domainOf(lam);
+    wc.fillStyle = "#0f1d1c"; wc.fillRect(0, 0, W, H);
+    // longueur d’onde à l’écran (échelle non respectée, mais croissante avec λ)
+    const p = logToPos(L(lam)), Lpx = 14 * Math.pow(560 / 14, p);
+    const col = d.id === "vis" ? visColor(lam * 1e9) : solid(d);
+    wc.strokeStyle = "rgba(255,255,255,.12)"; wc.lineWidth = 1;
+    wc.beginPath(); wc.moveTo(0, 110); wc.lineTo(W, 110); wc.stroke();
+    wc.strokeStyle = col; wc.lineWidth = 3; wc.beginPath();
+    for (let x = 0; x <= W; x += 1){ const y = 110 - 62 * Math.sin(2 * Math.PI * (x / Lpx) - phase); x ? wc.lineTo(x, y) : wc.moveTo(x, y); }
+    wc.stroke();
+    // flèche λ entre deux crêtes
+    const off = ((phase / (2 * Math.PI)) * Lpx + Lpx / 4) % Lpx;
+    let x1 = off; while (x1 < 30) x1 += Lpx;
+    const x2 = x1 + Lpx;
+    if (x2 < W - 10){
+      wc.strokeStyle = "#ffd166"; wc.fillStyle = "#ffd166"; wc.lineWidth = 1.6;
+      wc.setLineDash([3, 3]); wc.beginPath(); wc.moveTo(x1, 40); wc.lineTo(x1, 200); wc.moveTo(x2, 40); wc.lineTo(x2, 200); wc.stroke(); wc.setLineDash([]);
+      wc.beginPath(); wc.moveTo(x1, 195); wc.lineTo(x2, 195); wc.stroke();
+      for (const [x, s] of [[x1, 1], [x2, -1]]){ wc.beginPath(); wc.moveTo(x, 195); wc.lineTo(x + 7 * s, 191); wc.lineTo(x + 7 * s, 199); wc.fill(); }
+      wc.font = "800 15px Inter, sans-serif"; wc.textAlign = "center"; wc.fillText("λ", (x1 + x2) / 2, 188);
+    } else {
+      wc.fillStyle = "#ffd166"; wc.font = "700 13px Inter, sans-serif"; wc.textAlign = "left"; wc.fillText("λ plus grande que la fenêtre →", 14, 205);
+    }
+    wc.fillStyle = "rgba(255,255,255,.55)"; wc.font = "600 11px Inter, sans-serif"; wc.textAlign = "right";
+    wc.fillText("propagation →  (échelle non respectée)", W - 10, 18);
+  }
+  let last = performance.now();
+  function loop(now){ const dt = Math.min(.05, (now - last) / 1000); last = now; phase += dt * 4; if (!$("t1").hidden) drawWave(); requestAnimationFrame(loop); }
+  setPos(logToPos(L(5.3e-7))); requestAnimationFrame(loop);
+
+  // ===================== ACTIVITÉ 2 =====================
+  const ITEMS = [
+    {id:"wifi", em:"📶", name:"Box wifi", info:"f = 2,4 GHz", lam:C / 2.4e9},
+    {id:"tel", em:"📱", name:"Téléphone 4G", info:"f = 800 MHz", lam:C / 8e8},
+    {id:"four", em:"🍲", name:"Four à micro-ondes", info:"f = 2,45 GHz", lam:C / 2.45e9},
+    {id:"fm", em:"📻", name:"Radio FM", info:"f = 100 MHz", lam:3},
+    {id:"rfid", em:"💳", name:"Badge RFID (cantine)", info:"f = 13,56 MHz", lam:C / 13.56e6},
+    {id:"tele", em:"📺", name:"Télécommande", info:"λ = 940 nm", lam:9.4e-7},
+    {id:"therm", em:"🌡️", name:"Caméra thermique", info:"λ = 10 µm", lam:1e-5},
+    {id:"laser", em:"🔴", name:"Laser rouge", info:"λ = 650 nm", lam:6.5e-7},
+    {id:"uv", em:"🔦", name:"Lampe UV (faux billets)", info:"λ = 365 nm", lam:3.65e-7},
+    {id:"radio", em:"🦴", name:"Radiographie", info:"λ = 0,1 nm", lam:1e-10},
+    {id:"gamma", em:"☢️", name:"Radiothérapie", info:"λ = 1 pm", lam:1e-12}
+  ];
+  let placed = {}, errors = 0, selected = null;
+  function build2(){
+    $("zones").innerHTML = D.map(d => `<div class="zone" data-z="${d.id}" tabindex="0" role="button" aria-label="${d.name}" style="flex:${d.w};background:${d.id === "vis" ? d.col : d.col}"><div class="zt">${d.short}</div></div>`).join("");
+    const order = ITEMS.slice().sort(() => Math.random() - .5);
+    $("tray").innerHTML = order.map(it => itemHTML(it)).join("");
+    placed = {}; errors = 0; selected = null; $("msg2").innerHTML = ""; score2();
+    bind2();
+  }
+  const itemHTML = it => `<button class="item" type="button" data-it="${it.id}"><span class="em">${it.em}</span><span><b>${it.name}</b><small>${it.info}</small></span></button>`;
+  function score2(){
+    const n = Object.keys(placed).length;
+    $("score2").textContent = `${n} / ${ITEMS.length} objets bien placés` + (errors ? ` · ${errors} erreur${errors > 1 ? "s" : ""}` : "") + (n === ITEMS.length ? " 🎉" : "");
+  }
+  function tryPlace(itemId, zoneId){
+    const it = ITEMS.find(i => i.id === itemId), good = domainOf(it.lam), el = document.querySelector(`.item[data-it="${itemId}"]`);
+    if (!it || placed[itemId]) return;
+    if (good.id === zoneId){
+      placed[itemId] = true;
+      el.classList.remove("sel"); el.classList.add("placed");
+      el.querySelector("small").textContent = it.info.startsWith("f") ? `λ ≈ ${fmtLen(it.lam)}` : it.info;
+      document.querySelector(`.zone[data-z="${zoneId}"]`).appendChild(el);
+      $("msg2").innerHTML = `<div class="msg ok">✔ <b>${it.name}</b> : ${it.info.startsWith("f") ? `λ = c ÷ f = 3,00 × 10⁸ ÷ ${sci(C / it.lam)} ≈ ${fmtLen(it.lam)}, donc ` : `λ = ${fmtLen(it.lam)}, donc `}<b>${good.low}</b>.</div>`;
+      if (Object.keys(placed).length === ITEMS.length) $("msg2").innerHTML += `<div class="msg ok">🎉 Bravo, tous les objets sont placés ! Remarque : wifi, téléphone et radio <b>transmettent des informations</b> grâce aux ondes électromagnétiques.</div>`;
+    } else {
+      errors++;
+      el.classList.remove("shake"); void el.offsetWidth; el.classList.add("shake");
+      const z = D.find(d => d.id === zoneId);
+      const hint = it.info.startsWith("f")
+        ? `Calcule λ = c ÷ f (convertis d’abord la fréquence en Hz), puis compare aux limites des domaines.`
+        : (L(it.lam) < z.lo ? `Sa longueur d’onde est plus <b>petite</b> que celles de ce domaine : cherche plus à gauche.` : `Sa longueur d’onde est plus <b>grande</b> que celles de ce domaine : cherche plus à droite.`);
+      $("msg2").innerHTML = `<div class="msg bad">✗ <b>${it.name}</b> n’appartient pas au domaine « ${z.short} ». ${hint}</div>`;
+    }
+    score2();
+  }
+  function bind2(){
+    document.querySelectorAll("#tray .item").forEach(el => {
+      el.addEventListener("click", () => {
+        if (el.classList.contains("placed")) return;
+        document.querySelectorAll(".item.sel").forEach(x => x !== el && x.classList.remove("sel"));
+        el.classList.toggle("sel"); selected = el.classList.contains("sel") ? el.dataset.it : null;
+      });
+      el.addEventListener("pointerdown", e => {
+        if (el.classList.contains("placed") || e.button > 0) return;
+        const sx = e.clientX, sy = e.clientY; let ghost = null, over = null;
+        const move = ev => {
+          if (!ghost && Math.hypot(ev.clientX - sx, ev.clientY - sy) < 6) return;
+          if (!ghost){ ghost = el.cloneNode(true); ghost.classList.add("dragging"); ghost.style.width = el.offsetWidth + "px"; document.body.appendChild(ghost); el.style.opacity = .35; }
+          ghost.style.left = (ev.clientX - el.offsetWidth / 2) + "px"; ghost.style.top = (ev.clientY - 20) + "px";
+          const z = document.elementFromPoint(ev.clientX, ev.clientY)?.closest(".zone");
+          if (over && over !== z) over.classList.remove("over");
+          over = z; if (z) z.classList.add("over");
+        };
+        const up = () => {
+          removeEventListener("pointermove", move); removeEventListener("pointerup", up);
+          if (ghost){ ghost.remove(); el.style.opacity = ""; if (over){ over.classList.remove("over"); tryPlace(el.dataset.it, over.dataset.z); } el.dataset.dragged = "1"; setTimeout(() => delete el.dataset.dragged, 0); }
+        };
+        addEventListener("pointermove", move); addEventListener("pointerup", up);
+      });
+    });
+    document.querySelectorAll(".zone").forEach(z => {
+      const act = () => { if (selected){ tryPlace(selected, z.dataset.z); selected = null; } };
+      z.addEventListener("click", e => { if (!e.target.closest(".item")) act(); });
+      z.addEventListener("keydown", e => { if (e.key === "Enter") act(); });
+    });
+  }
+  // empêche le « clic » de fin de glisser de (dé)sélectionner l’objet
+  document.addEventListener("click", e => { const it = e.target.closest(".item"); if (it && it.dataset.dragged){ e.stopPropagation(); it.classList.remove("sel"); selected = null; } }, true);
+  $("reset2").addEventListener("click", build2);
+  $("cgo").addEventListener("click", () => {
+    const v = parseFloat($("cf").value.replace(",", ".").replace(/\s/g, ""));
+    if (!(v > 0)) return $("cres").textContent = "Écris une fréquence.";
+    const f = v * parseFloat($("cfu").value), l = C / f;
+    $("cres").innerHTML = `f = ${sci(f)} Hz → λ = 3,00 × 10⁸ ÷ ${sci(f)} = ${sci(l)} m ≈ <span style="color:var(--teal-d)">${fmtLen(l)}</span>`;
+  });
+  build2();
+
+  // ===================== ACTIVITÉ 3 =====================
+  const Q = [
+    {t:"f", txt:"La box wifi émet à la fréquence f = 5,0 GHz. Calcule la longueur d’onde λ.", f:5e9},
+    {t:"f", txt:"Une station de radio FM émet à f = 95,5 MHz. Calcule λ.", f:95.5e6},
+    {t:"f", txt:"Un téléphone 4G émet à f = 2,6 GHz. Calcule λ.", f:2.6e9},
+    {t:"f", txt:"Un badge RFID fonctionne à f = 13,56 MHz. Calcule λ.", f:13.56e6},
+    {t:"f", txt:"Un rayonnement a une fréquence f = 6,0 × 10¹⁴ Hz. Calcule λ.", f:6e14},
+    {t:"f", txt:"Un rayonnement a une fréquence f = 3,0 × 10¹³ Hz. Calcule λ.", f:3e13},
+    {t:"l", txt:"Un laser vert émet une lumière de longueur d’onde λ = 532 nm. Calcule sa fréquence f.", l:5.32e-7},
+    {t:"l", txt:"Une lampe UV émet à λ = 254 nm. Calcule la fréquence f.", l:2.54e-7},
+    {t:"l", txt:"Un radar routier émet une onde de longueur d’onde λ = 1,25 cm. Calcule f.", l:.0125},
+    {t:"l", txt:"Une radiographie utilise des rayons de longueur d’onde λ = 0,050 nm. Calcule f.", l:5e-11}
+  ];
+  $("d3").innerHTML += D.map(d => `<option value="${d.id}">${d.name}</option>`).join("");
+  let qi = -1, sc3 = {ok:0, tot:0}, answered = false;
+  const order3 = Q.map((_, i) => i).sort(() => Math.random() - .5);
+  function nextQ(){
+    qi = (qi + 1) % Q.length; answered = false;
+    const q = Q[order3[qi]];
+    $("q3").textContent = `Question ${qi + 1} / ${Q.length} — ${q.txt}`;
+    if (q.t === "f"){ $("a3lab").textContent = "λ ="; $("a3u").innerHTML = `<option value="1">m</option><option value="1e-2">cm</option><option value="1e-3">mm</option><option value="1e-6">µm</option><option value="1e-9">nm</option>`; }
+    else { $("a3lab").textContent = "f ="; $("a3u").innerHTML = `<option value="1">Hz</option><option value="1e3">kHz</option><option value="1e6">MHz</option><option value="1e9">GHz</option>`; }
+    $("a3").value = ""; $("a3").className = ""; $("d3").value = ""; $("msg3").innerHTML = "";
+  }
+  const parse = s => { s = String(s).trim().replace(/\s/g, "").replace(",", ".").replace(/×10\^?/, "e").replace(/x10\^?/i, "e"); const v = Number(s); return Number.isFinite(v) ? v : NaN; };
+  $("check3").addEventListener("click", () => {
+    const q = Q[order3[qi]], v = parse($("a3").value), u = parseFloat($("a3u").value), dom = $("d3").value;
+    if (!Number.isFinite(v) || v <= 0) return $("msg3").innerHTML = `<div class="msg warn">Écris ta réponse (exemple : 0,125 ou 1,25e-1).</div>`;
+    if (!dom) return $("msg3").innerHTML = `<div class="msg warn">Choisis aussi le domaine.</div>`;
+    const ans = v * u, lamT = q.t === "f" ? C / q.f : q.l, exp = q.t === "f" ? lamT : C / q.l;
+    const rel = ans / exp, okV = Math.abs(rel - 1) < .03, okD = dom === domainOf(lamT).id;
+    if (!answered){ sc3.tot++; if (okV && okD) sc3.ok++; answered = true; }
+    $("a3").className = okV ? "good" : "wrong";
+    const corr = q.t === "f" ? `λ = c ÷ f = 3,00 × 10⁸ ÷ ${sci(q.f)} = ${sci(lamT)} m ≈ <b>${fmtLen(lamT)}</b>` : `f = c ÷ λ = 3,00 × 10⁸ ÷ ${sci(q.l)} = <b>${fmtF(exp)}</b>`;
+    let tip = "";
+    if (!okV){
+      const k = Math.round(L(rel));
+      if (Math.abs(rel / Math.pow(10, k) - 1) < .03 && k !== 0) tip = `Ton résultat est ${k > 0 ? "trop grand" : "trop petit"} d’un facteur 10${sup(Math.abs(k))} : vérifie la <b>conversion</b> des préfixes (ou l’unité choisie).`;
+      else tip = "Reprends la méthode : convertis en unités de base, puis applique la formule.";
+    }
+    $("msg3").innerHTML = `<div class="msg ${okV && okD ? "ok" : "bad"}">${okV ? "✔ Calcul juste." : "✗ Calcul à revoir. " + tip}<br>${okD ? "✔ Bon domaine" : "✗ Domaine à revoir"} : ${domainOf(lamT).low}.<br><small>Correction : ${corr}.</small></div>`;
+    $("score3").textContent = `Score : ${sc3.ok} / ${sc3.tot}`;
+  });
+  $("next3").addEventListener("click", nextQ);
+  nextQ();
+
+  // ---------- Onglets ----------
+  document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () => {
+    document.querySelectorAll(".tab").forEach(x => x.setAttribute("aria-selected", x === t));
+    for (const k of [1, 2, 3]) $("t" + k).hidden = +t.dataset.t !== k;
+  }));
+})();
+</script>
+</body>
+</html>
