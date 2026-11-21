@@ -116,15 +116,15 @@
 <header>
   <p class="kicker">Physique-chimie · Mouvement · Laboratoire virtuel</p>
   <h1>Identifier la nature d’un mouvement à partir d’un enregistrement</h1>
-  <p class="lead"><b>Objectif :</b> à partir d’une vidéo, déterminer si la trajectoire est rectiligne, circulaire ou curviligne, et si la vitesse est constante, augmente ou diminue. Suis les étapes dans l’ordre.</p>
+  <p class="lead"><b>Objectif :</b> à partir d’une animation simulée, image par image, déterminer si la trajectoire est rectiligne, circulaire ou curviligne, et si la vitesse est constante, augmente ou diminue. Suis les étapes dans l’ordre.</p>
   <ol class="route" id="route">
-    <li data-r="0"><span class="ic">🎬</span><span><b>1. Choisir</b><br>une vidéo</span></li>
+    <li data-r="0"><span class="ic">🎬</span><span><b>1. Choisir</b><br>une animation</span></li>
     <li data-r="1"><span class="ic">📏</span><span><b>2. Étalonner</b><br>avec la règle</span></li>
     <li data-r="2"><span class="ic">✛</span><span><b>3. Placer</b><br>l’origine</span></li>
     <li data-r="3"><span class="ic">🎯</span><span><b>4. Pointer</b><br>l’objet</span></li>
     <li data-r="4"><span class="ic">📈</span><span><b>5. Exploiter</b><br>et conclure</span></li>
   </ol>
-  <div class="sec-title"><span class="n">1</span><h2>Choisis une vidéo</h2></div>
+  <div class="sec-title"><span class="n">1</span><h2>Choisis une animation</h2></div>
 </header>
 
 <main>
@@ -153,7 +153,7 @@
       </div>
       <h2 id="vTitle" hidden>Vidéo</h2>
       <div id="msg" style="margin-bottom:10px"></div>
-      <canvas id="video" width="800" height="450" aria-label="Image de l’enregistrement : clique pour étalonner, placer l’origine ou pointer l’objet."></canvas>
+      <canvas id="video" width="800" height="450" aria-label="Image de l’animation : clique pour étalonner, placer l’origine ou pointer l’objet."></canvas>
       <div class="vbar">
         <button class="btn" id="first" type="button" title="Première image">⏮</button>
         <button class="btn" id="prev" type="button" title="Image précédente">◀</button>
@@ -230,8 +230,8 @@
         <label><input type="radio" name="vit" value="dimaug"> diminue puis augmente</label>
         <details class="hintq"><summary>Indice</summary>Entre deux images, il s’écoule toujours la même durée Δt. Regarde la colonne <b>d</b> du tableau ou le graphique <b>v(t)</b> : si les distances sont égales, la vitesse est constante.</details>
       </fieldset>
-      <label for="justif" style="font-weight:700;font-size:.92rem">3. Justifie à l’aide de l’enregistrement</label>
-      <textarea id="justif" placeholder="Ex. : les points sont… ; les distances entre deux points successifs… ; le graphique v(t)…"></textarea>
+      <label for="justif" style="font-weight:700;font-size:.92rem">3. Justifie à partir de ton pointage</label>
+      <textarea id="justif" placeholder="Décris la forme de la trajectoire et compare les écarts entre les points pour des durées égales. Tu peux aussi t’appuyer sur v(t)."></textarea>
       <div class="inline" style="margin-top:8px"><button class="btn primary" id="check" type="button">Vérifier ma conclusion</button></div>
       <div id="result" style="margin-top:10px" aria-live="polite"></div>
     </section>
@@ -589,7 +589,7 @@
   function renderTable(){
     const M = measures();
     $("tbody").innerHTML = M.length ? M.map((r, i) => `<tr class="${r.f === S.frame ? "cur" : ""}"><td>M${r.f}</td><td>${fmt(r.t, 2)}</td><td>${fmt(r.x, 3)}</td><td>${fmt(r.y, 3)}</td><td>${r.d !== undefined ? fmt(r.d, 3) : ""}</td><td>${r.v !== undefined ? fmt(r.v, 2) : ""}</td></tr>`).join("")
-      : `<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:1em">${S.scale && S.origin ? "Pointe l’objet sur la vidéo." : "Étalonne et place l’origine pour obtenir les mesures."}</td></tr>`;
+      : `<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:1em">${S.scale && S.origin ? "Pointe l’objet sur l’image." : "Étalonne et place l’origine pour obtenir les mesures."}</td></tr>`;
   }
 
   // =====================================================================
@@ -658,7 +658,7 @@
     $("eq").textContent = eq;
     $("observe").innerHTML = {
       traj: "<b>À observer :</b> ce graphique montre la <b>trajectoire</b> (les positions successives). Les points sont-ils sur une <b>droite</b>, sur un <b>cercle</b>, ou sur une autre <b>courbe</b> ?",
-      xt: "<b>À observer :</b> si x(t) est une <b>droite</b>, l’objet parcourt la même distance pendant chaque Δt. Si la courbe se redresse ou s’aplatit, la vitesse change.",
+      xt: "<b>À observer :</b> une droite sur x(t) signifie que la coordonnée <b>x</b> varie à un rythme constant ou reste fixe. La bille en chute garde le même x alors que sa vitesse augmente. Pour étudier la vitesse, compare les distances entre positions successives pour des durées égales, ou affiche <b>v(t)</b>.",
       yt: "<b>À observer :</b> comment évolue la hauteur y au cours du temps ? Utile pour les mouvements verticaux ou les lancers.",
       vt: "<b>À observer :</b> la vitesse v reste-t-elle à peu près <b>constante</b> (points sur une ligne horizontale), <b>augmente</b>-t-elle ou <b>diminue</b>-t-elle ? De petits écarts sont normaux : ils viennent du pointage."
     }[graphType];
@@ -676,8 +676,13 @@
   $("check").addEventListener("click", () => {
     const tr = (document.querySelector('input[name="traj"]:checked') || {}).value, vi = (document.querySelector('input[name="vit"]:checked') || {}).value;
     const n = S.pts.filter(Boolean).length;
-    if (n < Math.min(6, sc.N)) return $("result").innerHTML = `<div class="msg warn">Pointe au moins 6 positions avant de conclure : ta conclusion doit s’appuyer sur l’enregistrement.</div>`;
+    if (n < Math.min(6, sc.N)) return $("result").innerHTML = `<div class="msg warn">Pointe au moins 6 positions avant de conclure : ta conclusion doit s’appuyer sur ton pointage.</div>`;
     if (!tr || !vi) return $("result").innerHTML = `<div class="msg warn">Réponds aux questions 1 et 2.</div>`;
+    if (!$("justif").value.trim()){
+      $("result").innerHTML = `<div class="msg warn">Avant la correction, décris la trajectoire et explique comment évolue la vitesse à l’aide de tes mesures.</div>`;
+      $("justif").focus();
+      return;
+    }
     const T = sc.truth, okT = tr === T.traj, okV = vi === T.vit;
     const M = measures().filter(r => r.v !== undefined), vs = M.map(r => r.v);
     const stat = vs.length ? ` Dans ton tableau, v varie de ${fmt(Math.min(...vs), 2)} à ${fmt(Math.max(...vs), 2)} m/s.` : "";
